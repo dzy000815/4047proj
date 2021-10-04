@@ -35,6 +35,7 @@ public class GreetingController {
 		String content = new String();
 		List<String> uniqueContent = new ArrayList<>() ;
 		List<String> urls = new ArrayList<>() ;
+		List<String> imgs = new ArrayList<>() ;
 		try {
 
 			URL url = new URL(urlString);
@@ -47,19 +48,20 @@ public class GreetingController {
 			content = loadPlainText(urlString);
 			uniqueContent = getUniqueWords(content);
 			urls = getURLs(urlString);
-
+			imgs = getimgs(urlString);
 		} catch (IOException e) {
 
 			content = "<h1>Unable to download the page</h1>" + urlString;
 
 		}
 
-		return urls;
+		return imgs;
 	}
 
 	class MyParserCallback extends HTMLEditorKit.ParserCallback {
 		public String content = new String();
 		public List<String> urls = new ArrayList<String>();
+		public List<String> imgs = new ArrayList<String>();
 
 		@Override
 		public void handleText(char[] data, int pos) {
@@ -84,7 +86,33 @@ public class GreetingController {
 					}
 				}
 			}
+
 		}
+
+		@Override
+		public void handleSimpleTag(Tag tag, MutableAttributeSet attrSet, int pos)
+		{
+			if (tag.toString().equals("img")) {
+
+				Enumeration e = attrSet.getAttributeNames();
+
+				while (e.hasMoreElements()) {
+
+					Object aname = e.nextElement();
+
+					if (aname.toString().equals("src")) {
+						String u = (String) attrSet.getAttribute(aname);
+
+						if (!imgs.contains(u))
+							imgs.add(u);
+					}
+				}
+			}
+		}
+
+
+
+
 
 	}
 
@@ -158,6 +186,18 @@ public class GreetingController {
 		url = new URL(prefix + str);
 
 		return url;
+	}
+
+	List<String> getimgs(String srcPage) throws IOException {
+		URL url = new URL(srcPage);
+		InputStreamReader reader = new InputStreamReader(url.openStream());
+
+		ParserDelegator parser = new ParserDelegator();
+		MyParserCallback callback = new MyParserCallback();
+		parser.parse(reader, callback, true);
+
+		return callback.imgs;
+
 	}
 
 
