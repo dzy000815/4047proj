@@ -12,10 +12,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Enumeration;
-import java.util.List;
+import java.util.*;
 
 import javax.swing.text.html.*;
 import javax.swing.text.html.HTML.*;
@@ -27,12 +24,17 @@ import javax.swing.text.*;
 @Controller
 public class GreetingController {
 
+	Stack<String> URLPool = new Stack<>();
+	List<String> ProcessedPool = new ArrayList<>();
+	public Hashtable wordList = new Hashtable();
+	public Hashtable imgList = new Hashtable();
 	@GetMapping("load")
 	@ResponseBody
-	List<String> loadWebPage(@RequestParam(name = "query", required = false, defaultValue = "there")
+	String loadWebPage(@RequestParam(name = "query", required = false, defaultValue = "there")
 							   String urlString) {
 		byte[] buffer = new byte[1024];
 		String content = new String();
+		URLPool.push(urlString);
 		List<String> uniqueContent = new ArrayList<>() ;
 		List<String> urls = new ArrayList<>() ;
 		List<String> imgs = new ArrayList<>() ;
@@ -40,22 +42,42 @@ public class GreetingController {
 
 			URL url = new URL(urlString);
 			InputStream in = url.openStream();
-			int len;
 
-			while((len = in.read(buffer)) != -1)
-				content += new String(buffer);
+			uniqueContent = getUniqueWords(loadPlainText(urlString));
+			for(String word : uniqueContent){
+				if(!wordList.contains(word)){
+					wordList.put(word,new LinkedList(new Node(urlString)));
+				}else{
+					((LinkedList) wordList.get(word)).add(new Node(urlString));
+				}
 
-			content = loadPlainText(urlString);
-			uniqueContent = getUniqueWords(content);
+			}
 			urls = getURLs(urlString);
+			for(String u : urls){
+				if(!ProcessedPool.contains(u)){
+					ProcessedPool.add(u);
+				}
+			}
 			imgs = getimgs(urlString);
-		} catch (IOException e) {
+			for(String i : imgs){
+				if(!imgList.contains(i)){
+					imgList.put(i,new LinkedList(new Node(urlString)));
+				}else{
+					((LinkedList) imgList.get(i)).add(new Node(urlString));
+				}
 
+			}
+			if(ProcessedPool.size() <= 100){
+				ProcessedPool.add(URLPool.pop());
+			}
+
+		} catch (IOException e) {
+			e.printStackTrace();
 			content = "<h1>Unable to download the page</h1>" + urlString;
 
 		}
 
-		return imgs;
+		return content;
 	}
 
 	class MyParserCallback extends HTMLEditorKit.ParserCallback {
@@ -81,8 +103,10 @@ public class GreetingController {
 
 					if (aname.toString().equals("href")) {
 						String u = (String) attrSet.getAttribute(aname);
-						if (urls.size() < 10 && !urls.contains(u))
+						if (URLPool.size() < 11 && !urls.contains(u) && !URLPool.contains(u) && !ProcessedPool.contains(u) && isAbsURL(u)){
 							urls.add(u);
+							URLPool.push(u);
+						}
 					}
 				}
 			}
@@ -109,10 +133,6 @@ public class GreetingController {
 				}
 			}
 		}
-
-
-
-
 
 	}
 
@@ -198,16 +218,6 @@ public class GreetingController {
 
 		return callback.imgs;
 
-	}
-
-
-
-
-	@GetMapping("s")
-	@ResponseBody
-	String s(HttpServletRequest request) {
-		return String.format("You are browsing %s with %s!",
-				request.getRequestURI(), request.getQueryString());
 	}
 
 
