@@ -20,6 +20,8 @@ import javax.swing.text.html.HTMLEditorKit.*;
 import javax.swing.text.html.parser.*;
 import javax.swing.text.*;
 
+import java.io.*;
+
 
 @Controller
 public class GreetingController {
@@ -30,7 +32,7 @@ public class GreetingController {
 	public Hashtable imgList = new Hashtable();
 	@GetMapping("load")
 	@ResponseBody
-	String loadWebPage(@RequestParam(name = "query", required = false, defaultValue = "there")
+	List loadWebPage(@RequestParam(name = "query", required = false, defaultValue = "there")
 							   String urlString) {
 		byte[] buffer = new byte[1024];
 		String content = new String();
@@ -38,6 +40,7 @@ public class GreetingController {
 		List<String> uniqueContent = new ArrayList<>() ;
 		List<String> urls = new ArrayList<>() ;
 		List<String> imgs = new ArrayList<>() ;
+
 		try {
 
 			URL url = new URL(urlString);
@@ -76,8 +79,20 @@ public class GreetingController {
 			content = "<h1>Unable to download the page</h1>" + urlString;
 
 		}
+		try {
+			File writename = new File("baidu.txt");
+			BufferedWriter out = new BufferedWriter(new FileWriter(writename));
+			out.write(String.valueOf(uniqueContent));
+			out.write("\n");
+			out.write(String.valueOf(urls));
+			out.write("\n");
+			out.write(String.valueOf(imgs));
+			out.close();
+			System.out.println("Success！");
+		} catch (IOException e) {
+		}
 
-		return content;
+		return uniqueContent;
 	}
 
 	class MyParserCallback extends HTMLEditorKit.ParserCallback {
