@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.InputStream;
@@ -30,16 +31,18 @@ public class GreetingController {
 	List<String> ProcessedPool = new ArrayList<>();
 	public Hashtable wordList = new Hashtable();
 	public Hashtable imgList = new Hashtable();
+	public String WebURL;
 	@GetMapping("load")
 	@ResponseBody
-	List loadWebPage(@RequestParam(name = "query", required = false, defaultValue = "there")
+	int loadWebPage(@RequestParam(name = "query", required = false, defaultValue = "there")
 							   String urlString) {
+		WebURL = urlString;
 		byte[] buffer = new byte[1024];
 		String content = new String();
 		URLPool.push(urlString);
 		List<String> uniqueContent = new ArrayList<>() ;
 		List<String> urls = new ArrayList<>() ;
-		List<String> imgs = new ArrayList<>() ;
+		List<image> imgs = new ArrayList<>() ;
 
 		try {
 
@@ -53,7 +56,6 @@ public class GreetingController {
 				}else{
 					((LinkedList) wordList.get(word)).add(new Node(urlString));
 				}
-
 			}
 			urls = getURLs(urlString);
 			for(String u : urls){
@@ -62,7 +64,7 @@ public class GreetingController {
 				}
 			}
 			imgs = getimgs(urlString);
-			for(String i : imgs){
+			for(image i : imgs){
 				if(!imgList.contains(i)){
 					imgList.put(i,new LinkedList(new Node(urlString)));
 				}else{
@@ -79,26 +81,28 @@ public class GreetingController {
 			content = "<h1>Unable to download the page</h1>" + urlString;
 
 		}
-		try {
-			File writename = new File("baidu.txt");
-			BufferedWriter out = new BufferedWriter(new FileWriter(writename));
-			out.write(String.valueOf(uniqueContent));
-			out.write("\n");
-			out.write(String.valueOf(urls));
-			out.write("\n");
-			out.write(String.valueOf(imgs));
-			out.close();
-			System.out.println("Success！");
-		} catch (IOException e) {
-		}
+//		try {
+//			File writename = new File("baidu.txt");
+//			BufferedWriter out = new BufferedWriter(new FileWriter(writename));
+//			out.write(String.valueOf(uniqueContent));
+//			out.write("\n");
+//			out.write(String.valueOf(urls));
+//			out.write("\n");
+//			out.write(String.valueOf(imgs));
+//			out.close();
+//			System.out.println("Success！");
+//		} catch (IOException e) {
+//		}
 
-		return uniqueContent;
+		return imgs.size();
 	}
 
+
 	class MyParserCallback extends HTMLEditorKit.ParserCallback {
+
 		public String content = new String();
 		public List<String> urls = new ArrayList<String>();
-		public List<String> imgs = new ArrayList<String>();
+		public List<image> imgs = new ArrayList<image>();
 
 		@Override
 		public void handleText(char[] data, int pos) {
@@ -125,12 +129,14 @@ public class GreetingController {
 					}
 				}
 			}
-
 		}
 
 		@Override
-		public void handleSimpleTag(Tag tag, MutableAttributeSet attrSet, int pos)
-		{
+		public void handleSimpleTag(Tag tag, MutableAttributeSet attrSet, int pos) {
+
+			String u = "";
+			List<String> alt = new ArrayList<>() ;
+
 			if (tag.toString().equals("img")) {
 
 				Enumeration e = attrSet.getAttributeNames();
@@ -140,16 +146,32 @@ public class GreetingController {
 					Object aname = e.nextElement();
 
 					if (aname.toString().equals("src")) {
-						String u = (String) attrSet.getAttribute(aname);
-
-						if (!imgs.contains(u))
-							imgs.add(u);
+						u = (String) attrSet.getAttribute(aname);
 					}
+					if(aname.toString().equals("alt")){
+						alt = Arrays.asList (((String) attrSet.getAttribute(aname)).split(" "));
+					}
+
+					}
+				if(imgs.size() == 0){
+					imgs.add(new image(u,WebURL,alt));
+
+				}else{
+					for(int i = 0; i < imgs.size(); i++){
+
+						if(imgs.get(i).src.equals(u)){
+							break;
+						}else if(!imgs.get(i).src.equals(u) && i == imgs.size() - 1){
+							imgs.add(new image(u,WebURL,alt));
+						}
+					}
+				}
+
+
 				}
 			}
 		}
 
-	}
 
 	String loadPlainText(String urlString) throws IOException {
 		MyParserCallback callback = new MyParserCallback();
@@ -223,7 +245,7 @@ public class GreetingController {
 		return url;
 	}
 
-	List<String> getimgs(String srcPage) throws IOException {
+	List<image> getimgs(String srcPage) throws IOException {
 		URL url = new URL(srcPage);
 		InputStreamReader reader = new InputStreamReader(url.openStream());
 
