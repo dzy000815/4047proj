@@ -36,6 +36,16 @@ public class GreetingController {
 	@ResponseBody
 	int loadWebPage(@RequestParam(name = "query", required = false, defaultValue = "there")
 							   String urlString) {
+		URLPool.push(urlString);
+		load(urlString);
+		while(ProcessedPool.size() < 5 && !URLPool.empty()){
+			load(URLPool.peek());
+		}
+
+		return ProcessedPool.size();
+	}
+
+	public void load(String urlString){
 		WebURL = urlString;
 		byte[] buffer = new byte[1024];
 		String content = new String();
@@ -59,23 +69,31 @@ public class GreetingController {
 			}
 			urls = getURLs(urlString);
 			for(String u : urls){
-				if(!ProcessedPool.contains(u)){
-					ProcessedPool.add(u);
+				if(URLPool.size() >= 10){
+					break;
+				}else{
+					if(!URLPool.contains(u)){
+						URLPool.add(u);
+					}
 				}
 			}
 			imgs = getimgs(urlString);
 			for(image i : imgs){
-				if(!imgList.contains(i)){
-					imgList.put(i,new LinkedList(new Node(urlString)));
-				}else{
-					((LinkedList) imgList.get(i)).add(new Node(urlString));
+
+				for(int j=0; j < i.alt.size(); j++){
+					if(!imgList.contains(i.alt.get(j))){
+						imgList.put(i.alt.get(j),new imgLinkedList(new imgNode(i)));
+					}else{
+						((imgLinkedList) imgList.get(i)).add(new imgNode(i));
+					}
 				}
 
 			}
-			if(ProcessedPool.size() <= 100){
+			if(ProcessedPool.size() <= 5){
 				ProcessedPool.add(URLPool.pop());
 			}
 
+			System.out.println("Success");
 		} catch (IOException e) {
 			e.printStackTrace();
 			content = "<h1>Unable to download the page</h1>" + urlString;
@@ -94,7 +112,6 @@ public class GreetingController {
 //		} catch (IOException e) {
 //		}
 
-		return imgs.size();
 	}
 
 

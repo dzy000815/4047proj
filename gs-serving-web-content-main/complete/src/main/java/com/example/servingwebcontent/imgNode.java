@@ -5,6 +5,6 @@ public class imgNode {
     imgNode next;
 
     public imgNode(image img){
-        img = this.img;
+        this.img = img;
     }
 }

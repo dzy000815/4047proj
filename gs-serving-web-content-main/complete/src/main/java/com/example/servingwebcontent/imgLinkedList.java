@@ -2,7 +2,6 @@ package com.example.servingwebcontent;
 
 public class imgLinkedList {
     imgNode head;
-    imgNode next;
 
     public void add(imgNode node){
         if(head == null){
@@ -11,5 +10,9 @@ public class imgLinkedList {
             node.next = head.next;
             head.next = node;
         }
+    }
+
+    public imgLinkedList(imgNode node){
+        head = node;
     }
 }
