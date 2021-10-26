@@ -16,4 +16,11 @@ public class LinkedList {
     public LinkedList(Node node){
         head = node;
     }
+
+    public boolean hasNext(Node node){
+        if(node.next==null){
+            return false;
+        }
+        return true;
+    }
 }

@@ -15,4 +15,11 @@ public class imgLinkedList {
     public imgLinkedList(imgNode node){
         head = node;
     }
+
+    public boolean hasNext(imgNode node){
+        if(node.next == null){
+            return false;
+        }
+        return true;
+    }
 }

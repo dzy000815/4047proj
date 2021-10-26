@@ -42,24 +42,88 @@ public class GreetingController {
 			load(URLPool.peek());
 		}
 
-		return ProcessedPool.size();
+		try {
+			File writename = new File("word.txt");
+			File writename2 = new File("url.txt");
+			File writename3 = new File("image.txt");
+			BufferedWriter out = new BufferedWriter(new FileWriter(writename));
+			BufferedWriter out2 = new BufferedWriter(new FileWriter(writename2));
+			BufferedWriter out3 = new BufferedWriter(new FileWriter(writename3));
+			Enumeration keys1 = wordList.keys();
+			while (keys1.hasMoreElements()){
+				String key = keys1.nextElement().toString();
+				out.write(String.valueOf(key));
+				out.write(" ");
+				LinkedList linkedList = (LinkedList)wordList.get(key);
+				Node n = linkedList.head;
+				out.write(n.value);
+				out.write(", ");
+				while(linkedList.hasNext(n)){
+					n = n.next;
+					out.write(n.value);
+					out.write(", ");
+				}
+				out.write("\n");
+			}
+			out.close();
+
+			for(String url:ProcessedPool){
+				out2.write(url);
+				out2.write("\n");
+			}
+
+			out2.close();
+
+
+			Enumeration keys2 = imgList.keys();
+			while (keys2.hasMoreElements()){
+				String key = keys2.nextElement().toString();
+				out3.write(String.valueOf(key));
+				out3.write(" ");
+				imgLinkedList linkedList = (imgLinkedList)imgList.get(key);
+				imgNode n = linkedList.head;
+				out3.write(n.img.src);
+				out3.write(", ");
+				out3.write(n.img.url);
+				out3.write(", ");
+				while(linkedList.hasNext(n)){
+					n = n.next;
+					out3.write(n.img.src);
+					out3.write(", ");
+					out3.write(n.img.url);
+					out3.write(", ");
+				}
+				out3.write("\n");
+			}
+			out3.close();
+
+//			out.write("\n");
+//			out.write(String.valueOf());
+//			out.write("\n");
+//			out.write(String.valueOf());
+
+			System.out.println("Success！");
+		} catch (IOException e) {
+		}
+
+		return imgList.size();
 	}
 
 	public void load(String urlString){
+		URLPool.pop();
 		WebURL = urlString;
 		byte[] buffer = new byte[1024];
 		String content = new String();
-		URLPool.push(urlString);
 		List<String> uniqueContent = new ArrayList<>() ;
 		List<String> urls = new ArrayList<>() ;
 		List<image> imgs = new ArrayList<>() ;
 
 		try {
 
+			MyParserCallback callback = new MyParserCallback();
 			URL url = new URL(urlString);
-			InputStream in = url.openStream();
 
-			uniqueContent = getUniqueWords(loadPlainText(urlString));
+			uniqueContent = getUniqueWords(loadPlainText(urlString,callback));
 			for(String word : uniqueContent){
 				if(!wordList.contains(word)){
 					wordList.put(word,new LinkedList(new Node(urlString)));
@@ -67,30 +131,43 @@ public class GreetingController {
 					((LinkedList) wordList.get(word)).add(new Node(urlString));
 				}
 			}
-			urls = getURLs(urlString);
+			urls = getURLs(urlString,callback);
 			for(String u : urls){
 				if(URLPool.size() >= 10){
 					break;
 				}else{
 					if(!URLPool.contains(u)){
-						URLPool.add(u);
+						URLPool.push(u);
 					}
 				}
 			}
-			imgs = getimgs(urlString);
+			imgs = getimgs(urlString,callback);
 			for(image i : imgs){
 
-				for(int j=0; j < i.alt.size(); j++){
-					if(!imgList.contains(i.alt.get(j))){
-						imgList.put(i.alt.get(j),new imgLinkedList(new imgNode(i)));
-					}else{
-						((imgLinkedList) imgList.get(i)).add(new imgNode(i));
+				System.out.println(i.src);
+				String file = i.src.substring(i.src.lastIndexOf('/')+1);
+				//String file = filename.substring(0,filename.lastIndexOf('.'));
+				if(!imgList.contains(file)){
+					imgList.put(file,new imgLinkedList(new imgNode(i)));
+				}else{
+					((imgLinkedList) imgList.get(i)).add(new imgNode(i));
+				}
+				if(!i.alt.isEmpty()){
+					for(int j=0; j < i.alt.size(); j++){
+						if(!imgList.contains(i.alt.get(j))){
+							imgList.put(i.alt.get(j),new imgLinkedList(new imgNode(i)));
+						}else{
+							((imgLinkedList) imgList.get(i)).add(new imgNode(i));
+						}
 					}
 				}
 
+
 			}
+
 			if(ProcessedPool.size() <= 5){
-				ProcessedPool.add(URLPool.pop());
+				ProcessedPool.add(urlString);
+				System.out.println(URLPool.peek());
 			}
 
 			System.out.println("Success");
@@ -99,23 +176,13 @@ public class GreetingController {
 			content = "<h1>Unable to download the page</h1>" + urlString;
 
 		}
-//		try {
-//			File writename = new File("baidu.txt");
-//			BufferedWriter out = new BufferedWriter(new FileWriter(writename));
-//			out.write(String.valueOf(uniqueContent));
-//			out.write("\n");
-//			out.write(String.valueOf(urls));
-//			out.write("\n");
-//			out.write(String.valueOf(imgs));
-//			out.close();
-//			System.out.println("Success！");
-//		} catch (IOException e) {
-//		}
+
 
 	}
 
 
 	class MyParserCallback extends HTMLEditorKit.ParserCallback {
+
 
 		public String content = new String();
 		public List<String> urls = new ArrayList<String>();
@@ -141,7 +208,6 @@ public class GreetingController {
 						String u = (String) attrSet.getAttribute(aname);
 						if (URLPool.size() < 11 && !urls.contains(u) && !URLPool.contains(u) && !ProcessedPool.contains(u) && isAbsURL(u)){
 							urls.add(u);
-							URLPool.push(u);
 						}
 					}
 				}
@@ -190,8 +256,8 @@ public class GreetingController {
 		}
 
 
-	String loadPlainText(String urlString) throws IOException {
-		MyParserCallback callback = new MyParserCallback();
+	String loadPlainText(String urlString, MyParserCallback callback) throws IOException {
+		//MyParserCallback callback = new MyParserCallback();
 		ParserDelegator parser = new ParserDelegator();
 
 		URL url = new URL(urlString);
@@ -222,12 +288,12 @@ public class GreetingController {
 		return uniqueWords;
 	}
 
-	List<String> getURLs(String srcPage) throws IOException {
+	List<String> getURLs(String srcPage,MyParserCallback callback) throws IOException {
 		URL url = new URL(srcPage);
 		InputStreamReader reader = new InputStreamReader(url.openStream());
 
 		ParserDelegator parser = new ParserDelegator();
-		MyParserCallback callback = new MyParserCallback();
+		//MyParserCallback callback = new MyParserCallback();
 		parser.parse(reader, callback, true);
 
 		for (int i=0; i<callback.urls.size(); i++) {
@@ -262,12 +328,12 @@ public class GreetingController {
 		return url;
 	}
 
-	List<image> getimgs(String srcPage) throws IOException {
+	List<image> getimgs(String srcPage, MyParserCallback callback) throws IOException {
 		URL url = new URL(srcPage);
 		InputStreamReader reader = new InputStreamReader(url.openStream());
 
 		ParserDelegator parser = new ParserDelegator();
-		MyParserCallback callback = new MyParserCallback();
+		//MyParserCallback callback = new MyParserCallback();
 		parser.parse(reader, callback, true);
 
 		return callback.imgs;
