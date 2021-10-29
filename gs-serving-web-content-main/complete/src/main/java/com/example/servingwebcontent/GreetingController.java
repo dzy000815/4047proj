@@ -2,9 +2,7 @@ package com.example.servingwebcontent;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
@@ -33,10 +31,45 @@ public class GreetingController {
 	public Hashtable wordList = new Hashtable();
 	public Hashtable imgList = new Hashtable();
 	public String WebURL;
-	@GetMapping("load")
-	@ResponseBody
+	public List<String> BlackListUrls = new ArrayList<>();
+	public List<String> BlackListWords = new ArrayList<>();
+	@RequestMapping(value = "/load",method = RequestMethod.GET)
 	public String loadWebPage(@RequestParam(name = "query", required = false, defaultValue = "there")
 							   String urlString, Model model) throws ServletException, IOException{
+
+		try{
+			String filename1 = "/Users/zzr/IdeaProjects/4047proj/blackListUrls.txt";
+			String filename2 = "/Users/zzr/IdeaProjects/4047proj/blackListWords.txt";
+			File BlackUrl = new File(filename1);
+			File BlackWord = new File(filename2);
+			FileInputStream in1 = new FileInputStream(BlackUrl);
+			FileInputStream in2 = new FileInputStream(BlackWord);
+			InputStreamReader reader1 = new InputStreamReader(in1);
+			BufferedReader buffReader1 = new BufferedReader(reader1);
+			InputStreamReader reader2 = new InputStreamReader(in2);
+			BufferedReader buffReader2 = new BufferedReader(reader2);
+
+			String line = "";
+			while((line = buffReader1.readLine()) != null){
+				BlackListUrls.add(line);
+			}
+			while ((line = buffReader2.readLine()) != null){
+				BlackListWords.add(line);
+			}
+
+		}catch (Exception e){
+			e.printStackTrace();
+		}
+		for(String url:BlackListUrls){
+			if(url.endsWith("*")){
+				if(urlString.startsWith(url.substring(0,url.lastIndexOf('*')))){
+					return "BlackSeed";
+				}
+			}else if(url.equals(urlString)){
+				return "BlackSeed";
+			}
+
+		}
 		URLPool.push(urlString);
 		load(urlString);
 		while(ProcessedPool.size() < 5 && !URLPool.empty()){
@@ -97,19 +130,42 @@ public class GreetingController {
 			}
 			out3.close();
 
-			System.out.println("Success！");
 		} catch (IOException e) {
 		}
 
-		model.addAttribute("name",urlString);
-		return "hello";
+		model.addAttribute("query",urlString);
+
+		return "SearchKey";
 	}
+
+
 
 	@GetMapping("SearchKey")
 	@ResponseBody
-	String SearchKey(@RequestParam(name = "query", required = false, defaultValue = "there")
-							   String urlString){
-		return "";
+	String SearchKey(@RequestParam(name = "type", required = false, defaultValue = "there") String type,
+					 @RequestParam(name = "keyword", required = false, defaultValue = "there") String keyword) {
+
+		switch (type){
+			case "word":
+				break;
+			case "image":
+				break;
+			default:
+		}
+
+		return type + keyword;
+	}
+
+	public void SearchWord(String keyword){
+		for(int i=0; i < wordList.size(); i++){
+			if(wordList.contains(keyword)){
+				wordList.get(keyword);
+			}
+		}
+	}
+
+	public void SearchImage(String keyword){
+
 	}
 
 	public void load(String urlString){
@@ -128,7 +184,9 @@ public class GreetingController {
 
 			uniqueContent = getUniqueWords(loadPlainText(urlString,callback));
 			for(String word : uniqueContent){
-				if(!wordList.contains(word)){
+				if(BlackListWords.contains(word)){
+
+				}else if(!wordList.contains(word)){
 					wordList.put(word,new LinkedList(new Node(urlString)));
 				}else{
 					((LinkedList) wordList.get(word)).add(new Node(urlString));
@@ -136,7 +194,9 @@ public class GreetingController {
 			}
 			urls = getURLs(urlString,callback);
 			for(String u : urls){
-				if(URLPool.size() >= 10){
+				if(BlackListUrls.contains(u)){
+
+				}else if(URLPool.size() >= 10){
 					break;
 				}else{
 					if(!URLPool.contains(u)){
@@ -147,9 +207,7 @@ public class GreetingController {
 			imgs = getimgs(urlString,callback);
 			for(image i : imgs){
 
-				System.out.println(i.src);
 				String file = i.src.substring(i.src.lastIndexOf('/')+1);
-				//String file = filename.substring(0,filename.lastIndexOf('.'));
 				if(!imgList.contains(file)){
 					imgList.put(file,new imgLinkedList(new imgNode(i)));
 				}else{
@@ -165,15 +223,12 @@ public class GreetingController {
 					}
 				}
 
-
 			}
 
 			if(ProcessedPool.size() <= 5){
 				ProcessedPool.add(urlString);
-				System.out.println(URLPool.peek());
 			}
 
-			System.out.println("Success");
 		} catch (IOException e) {
 			e.printStackTrace();
 			content = "<h1>Unable to download the page</h1>" + urlString;
