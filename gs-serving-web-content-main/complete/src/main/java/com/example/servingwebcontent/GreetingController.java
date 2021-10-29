@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
@@ -34,8 +35,8 @@ public class GreetingController {
 	public String WebURL;
 	@GetMapping("load")
 	@ResponseBody
-	int loadWebPage(@RequestParam(name = "query", required = false, defaultValue = "there")
-							   String urlString) {
+	public String loadWebPage(@RequestParam(name = "query", required = false, defaultValue = "there")
+							   String urlString, Model model) throws ServletException, IOException{
 		URLPool.push(urlString);
 		load(urlString);
 		while(ProcessedPool.size() < 5 && !URLPool.empty()){
@@ -74,7 +75,6 @@ public class GreetingController {
 
 			out2.close();
 
-
 			Enumeration keys2 = imgList.keys();
 			while (keys2.hasMoreElements()){
 				String key = keys2.nextElement().toString();
@@ -97,16 +97,19 @@ public class GreetingController {
 			}
 			out3.close();
 
-//			out.write("\n");
-//			out.write(String.valueOf());
-//			out.write("\n");
-//			out.write(String.valueOf());
-
 			System.out.println("Success！");
 		} catch (IOException e) {
 		}
 
-		return imgList.size();
+		model.addAttribute("name",urlString);
+		return "hello";
+	}
+
+	@GetMapping("SearchKey")
+	@ResponseBody
+	String SearchKey(@RequestParam(name = "query", required = false, defaultValue = "there")
+							   String urlString){
+		return "";
 	}
 
 	public void load(String urlString){
