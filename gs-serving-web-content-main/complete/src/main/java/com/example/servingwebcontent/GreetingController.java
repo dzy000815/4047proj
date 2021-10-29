@@ -2,9 +2,7 @@ package com.example.servingwebcontent;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
@@ -32,10 +30,10 @@ public class GreetingController {
 	public Hashtable wordList = new Hashtable();
 	public Hashtable imgList = new Hashtable();
 	public String WebURL;
-	@GetMapping("load")
-	@ResponseBody
-	int loadWebPage(@RequestParam(name = "query", required = false, defaultValue = "there")
-							   String urlString) {
+
+	@RequestMapping(value = "/load",method = RequestMethod.GET)
+	public String loadWebpage(@RequestParam(name = "query", required = false, defaultValue = "there")
+							   String urlString, Model model) {
 		URLPool.push(urlString);
 		load(urlString);
 		while(ProcessedPool.size() < 5 && !URLPool.empty()){
@@ -106,7 +104,9 @@ public class GreetingController {
 		} catch (IOException e) {
 		}
 
-		return imgList.size();
+
+		model.addAttribute("query", imgList.size());
+		return "greeting";
 	}
 
 	public void load(String urlString){
@@ -182,7 +182,6 @@ public class GreetingController {
 
 
 	class MyParserCallback extends HTMLEditorKit.ParserCallback {
-
 
 		public String content = new String();
 		public List<String> urls = new ArrayList<String>();
