@@ -31,6 +31,7 @@ public class GreetingController {
 	public Hashtable wordList = new Hashtable();
 	public Hashtable imgList = new Hashtable();
 	public String WebURL;
+
 	public List<String> BlackListUrls = new ArrayList<>();
 	public List<String> BlackListWords = new ArrayList<>();
 	@RequestMapping(value = "/load",method = RequestMethod.GET)
@@ -70,8 +71,13 @@ public class GreetingController {
 			}
 
 		}
-		URLPool.push(urlString);
-		load(urlString);
+		try{
+			URLPool.push(urlString);
+			load(urlString);
+		}catch (Exception e){
+			e.printStackTrace();
+			return "BlackSeed";
+		}
 		while(ProcessedPool.size() < 5 && !URLPool.empty()){
 			load(URLPool.peek());
 		}
@@ -147,6 +153,7 @@ public class GreetingController {
 
 		switch (type){
 			case "word":
+
 				break;
 			case "image":
 				break;
@@ -168,7 +175,7 @@ public class GreetingController {
 
 	}
 
-	public void load(String urlString){
+	public void load(String urlString) throws IOException{
 		URLPool.pop();
 		WebURL = urlString;
 		byte[] buffer = new byte[1024];
@@ -177,7 +184,7 @@ public class GreetingController {
 		List<String> urls = new ArrayList<>() ;
 		List<image> imgs = new ArrayList<>() ;
 
-		try {
+
 
 			MyParserCallback callback = new MyParserCallback();
 			URL url = new URL(urlString);
@@ -228,12 +235,6 @@ public class GreetingController {
 			if(ProcessedPool.size() <= 5){
 				ProcessedPool.add(urlString);
 			}
-
-		} catch (IOException e) {
-			e.printStackTrace();
-			content = "<h1>Unable to download the page</h1>" + urlString;
-
-		}
 
 
 	}
