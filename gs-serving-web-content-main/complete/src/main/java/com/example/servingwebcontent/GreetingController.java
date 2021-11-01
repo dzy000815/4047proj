@@ -28,18 +28,19 @@ public class GreetingController {
 
 	Stack<String> URLPool = new Stack<>();
 	List<String> ProcessedPool = new ArrayList<>();
-	public Hashtable wordList = new Hashtable();
-	public Hashtable imgList = new Hashtable();
+	public Hashtable<String,LinkedList> wordList = new Hashtable<>();
+	public Hashtable<String,imgLinkedList> imgList = new Hashtable();
 	public String WebURL;
 	public List<String> BlackListUrls = new ArrayList<>();
 	public List<String> BlackListWords = new ArrayList<>();
+	List<String> WordResult = new ArrayList<>();
+
 	@RequestMapping(value = "/load",method = RequestMethod.GET)
 	public String loadWebPage(@RequestParam(name = "query", required = false, defaultValue = "there")
 							   String urlString, Model model) throws ServletException, IOException{
-
 		try{
-			String filename1 = "/Users/lusi/Desktop/4047proj/blackListUrls.txt";
-			String filename2 = "/Users/lusi/Desktop//4047proj/blackListWords.txt";
+			String filename1 = "/Users/zzr/IdeaProjects/4047proj/blackListUrls.txt";
+			String filename2 = "/Users/zzr/IdeaProjects/4047proj/blackListWords.txt";
 			File BlackUrl = new File(filename1);
 			File BlackWord = new File(filename2);
 			FileInputStream in1 = new FileInputStream(BlackUrl);
@@ -78,8 +79,7 @@ public class GreetingController {
 			return "BlackSeed";
 		}
 
-
-		while(ProcessedPool.size() < 5 && !URLPool.empty()){
+		while(ProcessedPool.size() < 10 && !URLPool.empty()){
 			load(URLPool.peek());
 		}
 
@@ -95,11 +95,12 @@ public class GreetingController {
 				String key = keys1.nextElement().toString();
 				out.write(String.valueOf(key));
 				out.write(" ");
-				LinkedList linkedList = (LinkedList)wordList.get(key);
+				LinkedList linkedList = wordList.get(key);
 				Node n = linkedList.head;
 				out.write(n.value);
 				out.write(", ");
 				while(linkedList.hasNext(n)){
+					System.out.println("======");
 					n = n.next;
 					out.write(n.value);
 					out.write(", ");
@@ -149,26 +150,67 @@ public class GreetingController {
 
 	@GetMapping("SearchKey")
 	@ResponseBody
-	String SearchKey(@RequestParam(name = "type", required = false, defaultValue = "there") String type,
+	List SearchKey(@RequestParam(name = "type", required = false, defaultValue = "there") String type,
 					 @RequestParam(name = "keyword", required = false, defaultValue = "there") String keyword) {
 
+
+		String[] key;
 		switch (type){
 			case "word":
+				key = keyword.split(" ");
+				WordResult = SearchWord(key[0]);
+
+				for(int i=1; i < key.length; i++){
+					List<String> result = new ArrayList<>();
+					if(key[i].equals("OR")){
+						result = SearchWord(key[i++]);
+						for(String word1:result){
+							for(String word2:WordResult){
+								if(word2.equals(word1)){
+									result.remove(word2);
+								}
+							}
+						}
+						WordResult.addAll(result);
+					}else if(key[i].equals("-")){
+						result = SearchWord(key[i++]);
+						for(String word1:result){
+							WordResult.removeIf(word2 -> word2.equals(word1));
+						}
+					}else{
+						List<String> andList = new ArrayList<>();
+						result = SearchWord(key[i++]);
+						for(String word1:result){
+							for(String word2:WordResult){
+								if(word2.equals(word1)){
+									andList.add(word1);
+								}
+							}
+						}
+						WordResult = andList;
+					}
+				}
 				break;
 			case "image":
+
 				break;
 			default:
 		}
 
-		return type + keyword;
+		return WordResult;
 	}
 
-	public void SearchWord(String keyword){
-		for(int i=0; i < wordList.size(); i++){
-			if(wordList.contains(keyword)){
-				wordList.get(keyword);
-			}
+	public List SearchWord(String keyword){
+
+		List<String> result = new ArrayList<>();
+
+		Node n = ((LinkedList) wordList.get(keyword)).head;
+		result.add(n.value);
+		while(((LinkedList) wordList.get(keyword)).hasNext(n)){
+			n = n.next;
+			result.add(n.value);
 		}
+		return result;
 	}
 
 	public void SearchImage(String keyword){
@@ -177,6 +219,7 @@ public class GreetingController {
 
 	public void load(String urlString){
 		URLPool.pop();
+
 		WebURL = urlString;
 		byte[] buffer = new byte[1024];
 		String content = new String();
@@ -186,31 +229,43 @@ public class GreetingController {
 
 		try {
 
+			ParserDelegator parser = new ParserDelegator();
 			MyParserCallback callback = new MyParserCallback();
 
-			uniqueContent = getUniqueWords(loadPlainText(urlString,callback));
+			uniqueContent = getUniqueWords(loadPlainText(urlString,parser,callback));
 			for(String word : uniqueContent){
 				if(BlackListWords.contains(word)){
 
 				}else if(!wordList.contains(word)){
 					wordList.put(word,new LinkedList(new Node(urlString)));
 				}else{
-					((LinkedList) wordList.get(word)).add(new Node(urlString));
+					System.out.println("-=-=-=-=-=-=-=");
+					wordList.get(word).add(new Node(urlString));
 				}
 			}
-			urls = getURLs(urlString,callback);
+			urls = getURLs(urlString,parser,callback);
 			for(String u : urls){
-				if(BlackListUrls.contains(u)){
+				boolean add= true;
+				for(String url:BlackListUrls){
+					if(url.endsWith("*")){
+						if(u.startsWith(url.substring(0,url.lastIndexOf('*')))){
+							add = false;
+						}
+					}else if(url.equals(u)){
+						add = false;
+					}
+				}
+				if(!add){
 
 				}else if(URLPool.size() >= 10){
 					break;
 				}else{
-					if(!URLPool.contains(u)){
+					if(!URLPool.contains(u) && !u.equals(urlString)){
 						URLPool.push(u);
 					}
 				}
 			}
-			imgs = getimgs(urlString,callback);
+			imgs = getimgs(urlString,parser,callback);
 			for(image i : imgs){
 
 				String file = i.src.substring(i.src.lastIndexOf('/')+1);
@@ -231,7 +286,8 @@ public class GreetingController {
 
 			}
 
-			if(ProcessedPool.size() <= 5){
+
+			if(ProcessedPool.size() <= 10){
 				ProcessedPool.add(urlString);
 			}
 
@@ -240,6 +296,7 @@ public class GreetingController {
 			content = "<h1>Unable to download the page</h1>" + urlString;
 
 		}
+
 
 
 	}
@@ -320,9 +377,9 @@ public class GreetingController {
 		}
 
 
-	String loadPlainText(String urlString, MyParserCallback callback) throws IOException {
+	String loadPlainText(String urlString, ParserDelegator parser,MyParserCallback callback) throws IOException {
 		//MyParserCallback callback = new MyParserCallback();
-		ParserDelegator parser = new ParserDelegator();
+		//ParserDelegator parser = new ParserDelegator();
 
 		URL url = new URL(urlString);
 		InputStreamReader reader = new InputStreamReader(url.openStream());
@@ -352,11 +409,11 @@ public class GreetingController {
 		return uniqueWords;
 	}
 
-	List<String> getURLs(String srcPage,MyParserCallback callback) throws IOException {
+	List<String> getURLs(String srcPage, ParserDelegator parser,MyParserCallback callback) throws IOException {
 		URL url = new URL(srcPage);
 		InputStreamReader reader = new InputStreamReader(url.openStream());
 
-		ParserDelegator parser = new ParserDelegator();
+		//ParserDelegator parser = new ParserDelegator();
 		//MyParserCallback callback = new MyParserCallback();
 		parser.parse(reader, callback, true);
 
@@ -392,11 +449,11 @@ public class GreetingController {
 		return url;
 	}
 
-	List<image> getimgs(String srcPage, MyParserCallback callback) throws IOException {
+	List<image> getimgs(String srcPage, ParserDelegator parser,MyParserCallback callback) throws IOException {
 		URL url = new URL(srcPage);
 		InputStreamReader reader = new InputStreamReader(url.openStream());
 
-		ParserDelegator parser = new ParserDelegator();
+		//ParserDelegator parser = new ParserDelegator();
 		//MyParserCallback callback = new MyParserCallback();
 		parser.parse(reader, callback, true);
 
