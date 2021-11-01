@@ -38,8 +38,8 @@ public class GreetingController {
 							   String urlString, Model model) throws ServletException, IOException{
 
 		try{
-			String filename1 = "/Users/zzr/IdeaProjects/4047proj/blackListUrls.txt";
-			String filename2 = "/Users/zzr/IdeaProjects/4047proj/blackListWords.txt";
+			String filename1 = "/Users/lusi/Desktop/4047proj/blackListUrls.txt";
+			String filename2 = "/Users/lusi/Desktop//4047proj/blackListWords.txt";
 			File BlackUrl = new File(filename1);
 			File BlackWord = new File(filename2);
 			FileInputStream in1 = new FileInputStream(BlackUrl);
@@ -70,8 +70,15 @@ public class GreetingController {
 			}
 
 		}
-		URLPool.push(urlString);
-		load(urlString);
+		try{
+			URL url_test = new URL(urlString);
+			URLPool.push(urlString);
+			load(urlString);
+		}catch (IOException e){
+			return "BlackSeed";
+		}
+
+
 		while(ProcessedPool.size() < 5 && !URLPool.empty()){
 			load(URLPool.peek());
 		}
@@ -180,7 +187,6 @@ public class GreetingController {
 		try {
 
 			MyParserCallback callback = new MyParserCallback();
-			URL url = new URL(urlString);
 
 			uniqueContent = getUniqueWords(loadPlainText(urlString,callback));
 			for(String word : uniqueContent){

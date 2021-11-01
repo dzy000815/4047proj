@@ -2,13 +2,63 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>My Search Engine</title>
 </head>
+<style>
+input[type=text] {
+  width: 100%;
+  padding: 12px 20px;
+  margin: 8px 0;
+  display: inline-block;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+input[type=submit] {
+  width: 40%;
+  background-color: #4CAF50;
+  color: white;
+  padding: 14px 20px;
+  margin: 8px 0;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+input[type=submit]:hover {
+  background-color: #45a049;
+}
+
+div {
+  border-radius: 5px;
+  padding: 20px;
+}
+
+.box{
+    text-align: center;
+	background-color: #fff;
+	border-radius: 20px;
+	width: 500px;
+	height: 500px;
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%,-50%);
+    }
+</style>
+
 <body>
-<h1>My Search Engine</h1>
-<h2>Invalid URL!</h2>
-<form action="load" method="GET">
-    <p>Please input another URL:<input type="text" name="query" style="width: 20%; margin-left: auto" placeholder="seed URL" required/><input type="submit"/></p>
-</form>
+<div class="box">
+    <h1 style="text-align:center">Invalid URL! Please try again </h1>
+
+    <form action="load" method="GET">
+        <p>
+            <input type="text" name="query" style="width: 100%; margin-left: auto" placeholder="Input URL here" required/>
+            <input type="submit" value="Submit"/>
+        </p>
+    </form>
+
+</div>
 </body>
 </html>

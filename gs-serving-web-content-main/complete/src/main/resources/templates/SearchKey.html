@@ -2,22 +2,65 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>My Search Engine</title>
 </head>
+<style>
+input[type=text],select {
+  width: 100%;
+  padding: 12px 20px;
+  margin: 8px 0;
+  display: inline-block;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+input[type=submit] {
+  width: 40%;
+  background-color: #4CAF50;
+  color: white;
+  padding: 14px 20px;
+  margin: 8px 0;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+input[type=submit]:hover {
+  background-color: #45a049;
+}
+
+div {
+  border-radius: 5px;
+  padding: 20px;
+}
+
+.box{
+	background-color: #fff;
+	border-radius: 20px;
+	width: 500px;
+	height: 500px;
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%,-50%);
+    }
+</style>
 <body>
-<h1>My Search Engine</h1>
-Select keyword type:
-
-
+<h1 style="text-align:center">Keyword Search</h1>
+<div class="box">
 <form action="SearchKey" method="GET">
-    <select name="type" style="width: 30%; margin-right: auto" required>
-        <option value = "word">word</option>
-        <option value = "image">image</option>
+    <label style="text-align:left;">Select search type: </label>
+    <select name="type" style="width: 100%;height:  margin-right: auto" required>
+        <option value = "word">Word</option>
+        <option value = "image">Image</option>
     </select>
 
-    <p>Search:<input type="text" name="keyword" style="width: 30%; margin-left: auto" placeholder="keyword" required/>
+    <label style="text-align:left;">Input keyword: </label>
+    <input type="text" name="keyword" style="width: 100%; margin-left: auto" placeholder="Input keyword here" required/>
+    <input type="submit" value="Submit" style="text-align: center;margin-left:30%;" />
 
-        <input type="submit"/></p>
 </form>
+</div>
 </body>
 </html>
