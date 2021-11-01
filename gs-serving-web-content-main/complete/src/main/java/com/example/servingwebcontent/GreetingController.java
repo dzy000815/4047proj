@@ -31,7 +31,6 @@ public class GreetingController {
 	public Hashtable wordList = new Hashtable();
 	public Hashtable imgList = new Hashtable();
 	public String WebURL;
-
 	public List<String> BlackListUrls = new ArrayList<>();
 	public List<String> BlackListWords = new ArrayList<>();
 	@RequestMapping(value = "/load",method = RequestMethod.GET)
@@ -39,8 +38,8 @@ public class GreetingController {
 							   String urlString, Model model) throws ServletException, IOException{
 
 		try{
-			String filename1 = "/Users/zzr/IdeaProjects/4047proj/blackListUrls.txt";
-			String filename2 = "/Users/zzr/IdeaProjects/4047proj/blackListWords.txt";
+			String filename1 = "/Users/lusi/Desktop/4047proj/blackListUrls.txt";
+			String filename2 = "/Users/lusi/Desktop//4047proj/blackListWords.txt";
 			File BlackUrl = new File(filename1);
 			File BlackWord = new File(filename2);
 			FileInputStream in1 = new FileInputStream(BlackUrl);
@@ -72,12 +71,14 @@ public class GreetingController {
 
 		}
 		try{
+			URL url_test = new URL(urlString);
 			URLPool.push(urlString);
 			load(urlString);
-		}catch (Exception e){
-			e.printStackTrace();
+		}catch (IOException e){
 			return "BlackSeed";
 		}
+
+
 		while(ProcessedPool.size() < 5 && !URLPool.empty()){
 			load(URLPool.peek());
 		}
@@ -153,7 +154,6 @@ public class GreetingController {
 
 		switch (type){
 			case "word":
-
 				break;
 			case "image":
 				break;
@@ -175,7 +175,7 @@ public class GreetingController {
 
 	}
 
-	public void load(String urlString) throws IOException{
+	public void load(String urlString){
 		URLPool.pop();
 		WebURL = urlString;
 		byte[] buffer = new byte[1024];
@@ -184,10 +184,9 @@ public class GreetingController {
 		List<String> urls = new ArrayList<>() ;
 		List<image> imgs = new ArrayList<>() ;
 
-
+		try {
 
 			MyParserCallback callback = new MyParserCallback();
-			URL url = new URL(urlString);
 
 			uniqueContent = getUniqueWords(loadPlainText(urlString,callback));
 			for(String word : uniqueContent){
@@ -235,6 +234,12 @@ public class GreetingController {
 			if(ProcessedPool.size() <= 5){
 				ProcessedPool.add(urlString);
 			}
+
+		} catch (IOException e) {
+			e.printStackTrace();
+			content = "<h1>Unable to download the page</h1>" + urlString;
+
+		}
 
 
 	}
