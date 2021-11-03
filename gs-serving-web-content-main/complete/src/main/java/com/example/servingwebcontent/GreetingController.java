@@ -34,7 +34,7 @@ public class GreetingController {
 	public List<String> BlackListUrls = new ArrayList<>();
 	public List<String> BlackListWords = new ArrayList<>();
 	List<String> WordResult = new ArrayList<>();
-
+	List<image> ImageResult = new ArrayList<>();
 	@RequestMapping(value = "/load",method = RequestMethod.GET)
 	public String loadWebPage(@RequestParam(name = "query", required = false, defaultValue = "there")
 							   String urlString, Model model) throws ServletException, IOException{
@@ -79,7 +79,7 @@ public class GreetingController {
 			return "BlackSeed";
 		}
 
-		while(ProcessedPool.size() < 10 && !URLPool.empty()){
+		while(ProcessedPool.size() < 100 && !URLPool.empty()){
 			load(URLPool.peek());
 		}
 
@@ -100,7 +100,6 @@ public class GreetingController {
 				out.write(n.value);
 				out.write(", ");
 				while(linkedList.hasNext(n)){
-					System.out.println("======");
 					n = n.next;
 					out.write(n.value);
 					out.write(", ");
@@ -121,7 +120,7 @@ public class GreetingController {
 				String key = keys2.nextElement().toString();
 				out3.write(String.valueOf(key));
 				out3.write(" ");
-				imgLinkedList linkedList = (imgLinkedList)imgList.get(key);
+				imgLinkedList linkedList = imgList.get(key);
 				imgNode n = linkedList.head;
 				out3.write(n.img.src);
 				out3.write(", ");
@@ -154,6 +153,7 @@ public class GreetingController {
 					 @RequestParam(name = "keyword", required = false, defaultValue = "there") String keyword) {
 
 
+
 		String[] key;
 		switch (type){
 			case "word":
@@ -163,23 +163,28 @@ public class GreetingController {
 				for(int i=1; i < key.length; i++){
 					List<String> result = new ArrayList<>();
 					if(key[i].equals("OR")){
-						result = SearchWord(key[i++]);
+						List<String> removeList = new ArrayList<>();
+						result = SearchWord(key[++i]);
+						System.out.println(result);
 						for(String word1:result){
 							for(String word2:WordResult){
 								if(word2.equals(word1)){
-									result.remove(word2);
+									removeList.add(word1);
 								}
 							}
 						}
+						for(String wordRemove:removeList){
+							result.remove(wordRemove);
+						}
 						WordResult.addAll(result);
 					}else if(key[i].equals("-")){
-						result = SearchWord(key[i++]);
+						result = SearchWord(key[++i]);
 						for(String word1:result){
 							WordResult.removeIf(word2 -> word2.equals(word1));
 						}
 					}else{
 						List<String> andList = new ArrayList<>();
-						result = SearchWord(key[i++]);
+						result = SearchWord(key[i]);
 						for(String word1:result){
 							for(String word2:WordResult){
 								if(word2.equals(word1)){
@@ -190,10 +195,48 @@ public class GreetingController {
 						WordResult = andList;
 					}
 				}
-				break;
+				//return WordResult;
 			case "image":
+				key = keyword.split(" ");
+				ImageResult = SearchImage(key[0]);
 
-				break;
+				for(int i=1; i < key.length; i++){
+					List<image> result = new ArrayList<>();
+
+					if(key[i].equals("OR")){
+						List<image> removeList = new ArrayList<>();
+						result = SearchImage(key[++i]);
+						//System.out.println(result);
+						for(image img1:result){
+							for(image img2:ImageResult){
+								if(img2.url.equals(img1.url)){
+									removeList.add(img1);
+								}
+							}
+						}
+						for(image imgRemove:removeList){
+							result.remove(imgRemove);
+						}
+						ImageResult.addAll(result);
+					}else if(key[i].equals("-")){
+						result = SearchImage(key[++i]);
+						for(image img1:result){
+							ImageResult.removeIf(img2 -> img2.url.equals(img1.url));
+						}
+					}else{
+						List<image> andList = new ArrayList<>();
+						result = SearchImage(key[i]);
+						for(image img1:result){
+							for(image img2:ImageResult){
+								if(img2.url.equals(img1.url)){
+									andList.add(img1);
+								}
+							}
+						}
+						ImageResult = andList;
+					}
+				}
+				return ImageResult;
 			default:
 		}
 
@@ -204,17 +247,25 @@ public class GreetingController {
 
 		List<String> result = new ArrayList<>();
 
-		Node n = ((LinkedList) wordList.get(keyword)).head;
+		Node n = (wordList.get(keyword)).head;
 		result.add(n.value);
-		while(((LinkedList) wordList.get(keyword)).hasNext(n)){
+		while((wordList.get(keyword)).hasNext(n)){
 			n = n.next;
 			result.add(n.value);
 		}
 		return result;
 	}
 
-	public void SearchImage(String keyword){
+	public List SearchImage(String keyword){
+		List<image> result = new ArrayList<>();
 
+		imgNode n = (imgList.get(keyword)).head;
+		result.add(n.img);
+		while((imgList.get(keyword)).hasNext(n)){
+			n = n.next;
+			result.add(n.img);
+		}
+		return result;
 	}
 
 	public void load(String urlString){
@@ -227,19 +278,18 @@ public class GreetingController {
 		List<String> urls = new ArrayList<>() ;
 		List<image> imgs = new ArrayList<>() ;
 
-		try {
+		ParserDelegator parser = new ParserDelegator();
+		MyParserCallback callback = new MyParserCallback();
 
-			ParserDelegator parser = new ParserDelegator();
-			MyParserCallback callback = new MyParserCallback();
+		try {
 
 			uniqueContent = getUniqueWords(loadPlainText(urlString,parser,callback));
 			for(String word : uniqueContent){
 				if(BlackListWords.contains(word)){
 
-				}else if(!wordList.contains(word)){
+				}else if(!wordList.containsKey(word)){
 					wordList.put(word,new LinkedList(new Node(urlString)));
 				}else{
-					System.out.println("-=-=-=-=-=-=-=");
 					wordList.get(word).add(new Node(urlString));
 				}
 			}
@@ -260,7 +310,7 @@ public class GreetingController {
 				}else if(URLPool.size() >= 10){
 					break;
 				}else{
-					if(!URLPool.contains(u) && !u.equals(urlString)){
+					if(!URLPool.contains(u) && !u.equals(urlString) && !ProcessedPool.contains(u)){
 						URLPool.push(u);
 					}
 				}
@@ -272,32 +322,30 @@ public class GreetingController {
 				if(!imgList.contains(file)){
 					imgList.put(file,new imgLinkedList(new imgNode(i)));
 				}else{
-					((imgLinkedList) imgList.get(i)).add(new imgNode(i));
+					(imgList.get(i)).add(new imgNode(i));
 				}
 				if(!i.alt.isEmpty()){
 					for(int j=0; j < i.alt.size(); j++){
 						if(!imgList.contains(i.alt.get(j))){
 							imgList.put(i.alt.get(j),new imgLinkedList(new imgNode(i)));
 						}else{
-							((imgLinkedList) imgList.get(i)).add(new imgNode(i));
+							(imgList.get(i)).add(new imgNode(i));
 						}
 					}
 				}
 
 			}
 
-
-			if(ProcessedPool.size() <= 10){
+			if(ProcessedPool.size() <= 100){
 				ProcessedPool.add(urlString);
 			}
+			System.out.println(URLPool);
 
 		} catch (IOException e) {
+			URLPool.pop();
+			ProcessedPool.add(urlString);
 			e.printStackTrace();
-			content = "<h1>Unable to download the page</h1>" + urlString;
-
 		}
-
-
 
 	}
 
@@ -327,7 +375,7 @@ public class GreetingController {
 
 					if (aname.toString().equals("href")) {
 						String u = (String) attrSet.getAttribute(aname);
-						if (URLPool.size() < 11 && !urls.contains(u) && !URLPool.contains(u) && !ProcessedPool.contains(u) && isAbsURL(u)){
+						if (URLPool.size() < 11 && !urls.contains(u) && !URLPool.contains(u) ){
 							urls.add(u);
 						}
 					}
@@ -419,8 +467,10 @@ public class GreetingController {
 
 		for (int i=0; i<callback.urls.size(); i++) {
 			String str = callback.urls.get(i);
-			if (!isAbsURL(str))
+			if (!isAbsURL(str)){
 				callback.urls.set(i, toAbsURL(str, url).toString());
+			}
+
 		}
 
 		return callback.urls;
@@ -439,7 +489,7 @@ public class GreetingController {
 		if (ref.getPort() > -1)
 			prefix += ":" + ref.getPort();
 
-		if (!str.startsWith("/")) {
+		if (!str.startsWith("/") && !str.startsWith("?") && !str.startsWith("#")) {
 			int len = ref.getPath().length() - ref.getFile().length();
 			String tmp = "/" + ref.getPath().substring(0, len) + "/";
 			prefix += tmp.replace("//", "/");
