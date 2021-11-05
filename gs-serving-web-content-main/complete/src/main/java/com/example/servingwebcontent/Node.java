@@ -1,10 +1,10 @@
 package com.example.servingwebcontent;
 
 public class Node {
-    String value;
+    Word word;
     Node next;
 
-    public Node(String value){
-        this.value = value;
+    public Node(Word word){
+        this.word = word;
     }
 }

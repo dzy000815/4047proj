@@ -5,10 +5,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.ServletException;
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -16,7 +13,6 @@ import java.util.*;
 
 import javax.swing.text.html.*;
 import javax.swing.text.html.HTML.*;
-import javax.swing.text.html.HTMLEditorKit.*;
 import javax.swing.text.html.parser.*;
 import javax.swing.text.*;
 
@@ -29,12 +25,14 @@ public class GreetingController {
 	Stack<String> URLPool = new Stack<>();
 	List<String> ProcessedPool = new ArrayList<>();
 	public Hashtable<String,LinkedList> wordList = new Hashtable<>();
-	public Hashtable<String,imgLinkedList> imgList = new Hashtable();
+	public Hashtable<String,imgLinkedList> imgList = new Hashtable<>();
 	public String WebURL;
 	public List<String> BlackListUrls = new ArrayList<>();
 	public List<String> BlackListWords = new ArrayList<>();
 	List<String> WordResult = new ArrayList<>();
 	List<image> ImageResult = new ArrayList<>();
+	List<String> ImageSrc = new ArrayList<>();
+	List<String> ImageUrl = new ArrayList<>();
 	@RequestMapping(value = "/load",method = RequestMethod.GET)
 	public String loadWebPage(@RequestParam(name = "query", required = false, defaultValue = "there")
 							   String urlString, Model model) throws ServletException, IOException{
@@ -79,7 +77,7 @@ public class GreetingController {
 			return "BlackSeed";
 		}
 
-		while(ProcessedPool.size() < 100 && !URLPool.empty()){
+		while(ProcessedPool.size() < 5 && !URLPool.empty()){
 			load(URLPool.peek());
 		}
 
@@ -146,12 +144,10 @@ public class GreetingController {
 	}
 
 
-
-	@GetMapping("SearchKey")
-	@ResponseBody
-	List SearchKey(@RequestParam(name = "type", required = false, defaultValue = "there") String type,
-					 @RequestParam(name = "keyword", required = false, defaultValue = "there") String keyword) {
-
+	@RequestMapping(value = "/SearchKey",method = RequestMethod.GET)
+	public String SearchKey(@RequestParam(name = "type", required = false, defaultValue = "there") String type,
+					 		@RequestParam(name = "keyword", required = false, defaultValue = "there") String keyword,
+							Model model) {
 
 
 		String[] key;
@@ -195,7 +191,8 @@ public class GreetingController {
 						WordResult = andList;
 					}
 				}
-				//return WordResult;
+				model.addAttribute("result",WordResult);
+				return "WordResult";
 			case "image":
 				key = keyword.split(" ");
 				ImageResult = SearchImage(key[0]);
@@ -233,15 +230,27 @@ public class GreetingController {
 								}
 							}
 						}
+
 						ImageResult = andList;
 					}
 				}
-				return ImageResult;
+				for(image img:ImageResult){
+					ImageSrc.add(img.src);
+					ImageUrl.add(img.url);
+				}
+				model.addAttribute("imgsrc",ImageSrc);
+				model.addAttribute("imgurl",ImageUrl)
+				return "ImageResult";
 			default:
 		}
 
-		return WordResult;
+
+		//model.addAttribute("result",WordResult);
+		return "WordResult";
 	}
+
+
+
 
 	public List SearchWord(String keyword){
 
@@ -288,7 +297,7 @@ public class GreetingController {
 				if(BlackListWords.contains(word)){
 
 				}else if(!wordList.containsKey(word)){
-					wordList.put(word,new LinkedList(new Node(urlString)));
+					wordList.put(word,new LinkedList(new Node()));
 				}else{
 					wordList.get(word).add(new Node(urlString));
 				}
@@ -336,7 +345,7 @@ public class GreetingController {
 
 			}
 
-			if(ProcessedPool.size() <= 100){
+			if(ProcessedPool.size() <= 5){
 				ProcessedPool.add(urlString);
 			}
 			System.out.println(URLPool);
@@ -420,7 +429,13 @@ public class GreetingController {
 				}
 
 
+				}else if(tag.toString().equals("title")){
+				Enumeration e = attrSet.getAttributeNames();
+
+				while(e.hasMoreElements()){
+
 				}
+			}
 			}
 		}
 
