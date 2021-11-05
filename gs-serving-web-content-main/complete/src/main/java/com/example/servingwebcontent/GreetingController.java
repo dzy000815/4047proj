@@ -5,7 +5,10 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.ServletException;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -13,6 +16,7 @@ import java.util.*;
 
 import javax.swing.text.html.*;
 import javax.swing.text.html.HTML.*;
+import javax.swing.text.html.HTMLEditorKit.*;
 import javax.swing.text.html.parser.*;
 import javax.swing.text.*;
 
@@ -22,6 +26,8 @@ import java.io.*;
 @Controller
 public class GreetingController {
 
+	int X = 5;
+	int Y = 10;
 	Stack<String> URLPool = new Stack<>();
 	List<String> ProcessedPool = new ArrayList<>();
 	public Hashtable<String,LinkedList> wordList = new Hashtable<>();
@@ -31,14 +37,18 @@ public class GreetingController {
 	public List<String> BlackListWords = new ArrayList<>();
 	List<String> WordResult = new ArrayList<>();
 	List<image> ImageResult = new ArrayList<>();
+
+	//Gathering information
 	List<String> ImageSrc = new ArrayList<>();
 	List<String> ImageUrl = new ArrayList<>();
 	@RequestMapping(value = "/load",method = RequestMethod.GET)
 	public String loadWebPage(@RequestParam(name = "query", required = false, defaultValue = "there")
 							   String urlString, Model model) throws ServletException, IOException{
+
+		//Read the blacklist files
 		try{
-			String filename1 = "/Users/zzr/IdeaProjects/4047proj/blackListUrls.txt";
-			String filename2 = "/Users/zzr/IdeaProjects/4047proj/blackListWords.txt";
+			String filename1 = "/Users/lusi/Desktop/4047proj/blackListUrls.txt";
+			String filename2 = "/Users/lusi/Desktop/4047proj/blackListWords.txt";
 			File BlackUrl = new File(filename1);
 			File BlackWord = new File(filename2);
 			FileInputStream in1 = new FileInputStream(BlackUrl);
@@ -48,6 +58,7 @@ public class GreetingController {
 			InputStreamReader reader2 = new InputStreamReader(in2);
 			BufferedReader buffReader2 = new BufferedReader(reader2);
 
+			//Generate lists for banned urls and words
 			String line = "";
 			while((line = buffReader1.readLine()) != null){
 				BlackListUrls.add(line);
@@ -59,6 +70,8 @@ public class GreetingController {
 		}catch (Exception e){
 			e.printStackTrace();
 		}
+
+		//Judge whether the input is involved in the blacklist
 		for(String url:BlackListUrls){
 			if(url.endsWith("*")){
 				if(urlString.startsWith(url.substring(0,url.lastIndexOf('*')))){
@@ -69,18 +82,22 @@ public class GreetingController {
 			}
 
 		}
+
+		//Judge whether the input is a valid url with protocol
 		try{
 			URL url_test = new URL(urlString);
-			URLPool.push(urlString);
-			load(urlString);
+			URLPool.push(urlString); //If yes, push the url into the URLPool stack
+			load(urlString); //call the function to gather information of the web page
 		}catch (IOException e){
-			return "BlackSeed";
+			return "BlackSeed"; //If not, return to the error page to input the url again
 		}
 
-		while(ProcessedPool.size() < 5 && !URLPool.empty()){
+        //If the processed url pool is not full or the URL Pool is not empty, the program continues
+		while(ProcessedPool.size() < X && !URLPool.empty()){
 			load(URLPool.peek());
 		}
 
+		//Output the scanning result to txt files
 		try {
 			File writename = new File("word.txt");
 			File writename2 = new File("url.txt");
@@ -144,24 +161,28 @@ public class GreetingController {
 	}
 
 
-	@RequestMapping(value = "/SearchKey",method = RequestMethod.GET)
-	public String SearchKey(@RequestParam(name = "type", required = false, defaultValue = "there") String type,
-					 		@RequestParam(name = "keyword", required = false, defaultValue = "there") String keyword,
-							Model model) {
-
+	//Serving request
+	@RequestMapping(value = "/SearchKey", method = RequestMethod.GET)
+	String SearchKey(@RequestParam(name = "type", required = false, defaultValue = "there") String type,
+					 @RequestParam(name = "keyword", required = false, defaultValue = "there") String keyword, Model model) {
 
 		String[] key;
+		//Divide the search types to keyword search and image search
 		switch (type){
+			//If user choose to do keyword search
 			case "word":
 				key = keyword.split(" ");
-				WordResult = SearchWord(key[0]);
+				WordResult = SearchWord(key[0]); //Search with the first word in the input
 
+				//If there are multiple words, case by case discussion
 				for(int i=1; i < key.length; i++){
 					List<String> result = new ArrayList<>();
+					//If there is "OR" in the input
 					if(key[i].equals("OR")){
 						List<String> removeList = new ArrayList<>();
-						result = SearchWord(key[++i]);
+						result = SearchWord(key[++i]);//Search with the word following "OR"
 						System.out.println(result);
+						//Get the union set of results from two words centered by "OR"
 						for(String word1:result){
 							for(String word2:WordResult){
 								if(word2.equals(word1)){
@@ -169,18 +190,26 @@ public class GreetingController {
 								}
 							}
 						}
-						for(String wordRemove:removeList){
+						for(String wordRemove:removeList) {
 							result.remove(wordRemove);
 						}
+						//Add the new result to the list
 						WordResult.addAll(result);
+
+					//If there is "-" in the input
 					}else if(key[i].equals("-")){
-						result = SearchWord(key[++i]);
+						result = SearchWord(key[++i]); //Search with the world following the "-"
+						//Delete the items in the list which equal to the new result
 						for(String word1:result){
 							WordResult.removeIf(word2 -> word2.equals(word1));
 						}
+
+					//If there is other content except for "OR" or "-" in the input
 					}else{
 						List<String> andList = new ArrayList<>();
-						result = SearchWord(key[i]);
+						result = SearchWord(key[i]);//Search with the word
+
+						//Get the intersection set between the list and the new result
 						for(String word1:result){
 							for(String word2:WordResult){
 								if(word2.equals(word1)){
@@ -188,22 +217,30 @@ public class GreetingController {
 								}
 							}
 						}
+
+						//Replace the list with the new intersection set
 						WordResult = andList;
 					}
 				}
-				model.addAttribute("result",WordResult);
-				return "WordResult";
-			case "image":
-				key = keyword.split(" ");
-				ImageResult = SearchImage(key[0]);
 
+				model.addAttribute("result",WordResult);
+				return "Result";
+
+			//If user choose to do image search
+			case "image":
+				key = keyword.split(" ");//Split the input by " "
+				ImageResult = SearchImage(key[0]);//Search with the first word in the input
+
+				//If there are multiple words, case by case discussion
 				for(int i=1; i < key.length; i++){
 					List<image> result = new ArrayList<>();
 
+					//If there is "OR" in the input
 					if(key[i].equals("OR")){
 						List<image> removeList = new ArrayList<>();
-						result = SearchImage(key[++i]);
-						//System.out.println(result);
+						result = SearchImage(key[++i]);//Search with the world following the "OR", and i plus 1
+
+						//Get the union set of results from two words centered by "OR"
 						for(image img1:result){
 							for(image img2:ImageResult){
 								if(img2.url.equals(img1.url)){
@@ -214,15 +251,23 @@ public class GreetingController {
 						for(image imgRemove:removeList){
 							result.remove(imgRemove);
 						}
+						//Add the new result to the list
 						ImageResult.addAll(result);
+
+					//If there is "-" in the input
 					}else if(key[i].equals("-")){
-						result = SearchImage(key[++i]);
+						result = SearchImage(key[++i]);//Search with the world following the "-", and i plus 1
+						//Delete the items in the list which equal to the new result
 						for(image img1:result){
 							ImageResult.removeIf(img2 -> img2.url.equals(img1.url));
 						}
+
+					//If there is other content except for "OR" or "-" in the input
 					}else{
 						List<image> andList = new ArrayList<>();
-						result = SearchImage(key[i]);
+						result = SearchImage(key[i]);//Search with the word
+
+						//Get the intersection set between the list and the new result
 						for(image img1:result){
 							for(image img2:ImageResult){
 								if(img2.url.equals(img1.url)){
@@ -230,10 +275,11 @@ public class GreetingController {
 								}
 							}
 						}
-
+						//Replace the list with the new intersection set
 						ImageResult = andList;
 					}
 				}
+
 				for(image img:ImageResult){
 					ImageSrc.add(img.src);
 					ImageUrl.add(img.url);
@@ -248,10 +294,7 @@ public class GreetingController {
 		//model.addAttribute("result",WordResult);
 		return "WordResult";
 	}
-
-
-
-
+	//Search for urls with one word
 	public List SearchWord(String keyword){
 
 		List<String> result = new ArrayList<>();
@@ -265,6 +308,7 @@ public class GreetingController {
 		return result;
 	}
 
+	//Search for image objects with one word
 	public List SearchImage(String keyword){
 		List<image> result = new ArrayList<>();
 
@@ -277,22 +321,25 @@ public class GreetingController {
 		return result;
 	}
 
+
+	//The function to gather information of a website
 	public void load(String urlString){
-		URLPool.pop();
+		URLPool.pop();//pop out the url being processed
 
 		WebURL = urlString;
 		byte[] buffer = new byte[1024];
 		String content = new String();
-		List<String> uniqueContent = new ArrayList<>() ;
-		List<String> urls = new ArrayList<>() ;
-		List<image> imgs = new ArrayList<>() ;
+		List<String> uniqueContent = new ArrayList<>() ;//Store the keyword
+		List<String> urls = new ArrayList<>() ;//Store the urls
+		List<image> imgs = new ArrayList<>() ;//Store the images
 
 		ParserDelegator parser = new ParserDelegator();
 		MyParserCallback callback = new MyParserCallback();
 
 		try {
-
+			//Get the unique keywords in the website being processed
 			uniqueContent = getUniqueWords(loadPlainText(urlString,parser,callback));
+			//If the word is in blacklist or already in the list, the word cannot be added to the list
 			for(String word : uniqueContent){
 				if(BlackListWords.contains(word)){
 
@@ -302,9 +349,12 @@ public class GreetingController {
 					wordList.get(word).add(new Node(urlString));
 				}
 			}
+
+			//Get the urls in the website being processed
 			urls = getURLs(urlString,parser,callback);
 			for(String u : urls){
 				boolean add= true;
+				//Give a boolean to the url to judge whether it is in the blacklist
 				for(String url:BlackListUrls){
 					if(url.endsWith("*")){
 						if(u.startsWith(url.substring(0,url.lastIndexOf('*')))){
@@ -314,9 +364,12 @@ public class GreetingController {
 						add = false;
 					}
 				}
+
+				//If the url already in the URLPool or ProcessedPool or equals to the url being processed,
+				//it cannot be added to the list
 				if(!add){
 
-				}else if(URLPool.size() >= 10){
+				}else if(URLPool.size() >= X){
 					break;
 				}else{
 					if(!URLPool.contains(u) && !u.equals(urlString) && !ProcessedPool.contains(u)){
@@ -324,10 +377,14 @@ public class GreetingController {
 					}
 				}
 			}
+
+			//Get the images in the website being processed
 			imgs = getimgs(urlString,parser,callback);
 			for(image i : imgs){
 
 				String file = i.src.substring(i.src.lastIndexOf('/')+1);
+				//If the filename and alts of the image are not already in the list,
+				//the keywords of them will be added to the list separately
 				if(!imgList.contains(file)){
 					imgList.put(file,new imgLinkedList(new imgNode(i)));
 				}else{
@@ -345,7 +402,8 @@ public class GreetingController {
 
 			}
 
-			if(ProcessedPool.size() <= 5){
+			//If the ProcessedPool is not full, the url will be added to the ProcessedPool list
+			if(ProcessedPool.size() <= Y){
 				ProcessedPool.add(urlString);
 			}
 			System.out.println(URLPool);
@@ -392,6 +450,7 @@ public class GreetingController {
 			}
 		}
 
+		//Handel the front tag in the html file
 		@Override
 		public void handleSimpleTag(Tag tag, MutableAttributeSet attrSet, int pos) {
 
@@ -439,7 +498,7 @@ public class GreetingController {
 			}
 		}
 
-
+	//Get the text content in the website
 	String loadPlainText(String urlString, ParserDelegator parser,MyParserCallback callback) throws IOException {
 		//MyParserCallback callback = new MyParserCallback();
 		//ParserDelegator parser = new ParserDelegator();
@@ -451,6 +510,7 @@ public class GreetingController {
 		return callback.content;
 	}
 
+	//Get the unique word list of text content
 	public static List<String> getUniqueWords(String text) {
 		String[] words = text.split("[0-9\\W]+");
 		ArrayList<String> uniqueWords = new ArrayList<String>();
@@ -472,6 +532,7 @@ public class GreetingController {
 		return uniqueWords;
 	}
 
+	//Get the urls involved in the website
 	List<String> getURLs(String srcPage, ParserDelegator parser,MyParserCallback callback) throws IOException {
 		URL url = new URL(srcPage);
 		InputStreamReader reader = new InputStreamReader(url.openStream());
@@ -492,10 +553,12 @@ public class GreetingController {
 
 	}
 
+	//Judge whether the URL is valid with protocol
 	boolean isAbsURL(String str) {
 		return str.matches("^[a-z0-9]+://.+");
 	}
 
+	//Add protocol to not absolute URL
 	URL toAbsURL(String str, URL ref) throws MalformedURLException {
 		URL url = null;
 
@@ -514,6 +577,7 @@ public class GreetingController {
 		return url;
 	}
 
+	//Get images involved in the website
 	List<image> getimgs(String srcPage, ParserDelegator parser,MyParserCallback callback) throws IOException {
 		URL url = new URL(srcPage);
 		InputStreamReader reader = new InputStreamReader(url.openStream());
