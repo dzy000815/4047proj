@@ -29,7 +29,7 @@ import java.util.regex.Pattern;
 public class GreetingController {
 
 	int X = 5;
-	int Y = 10;
+	int Y = 3;
 	Stack<String> URLPool = new Stack<>();
 	List<String> ProcessedPool = new ArrayList<>();
 	public Hashtable<String,LinkedList> wordList = new Hashtable<>();
@@ -50,8 +50,8 @@ public class GreetingController {
 
 		//Read the blacklist files
 		try{
-			String filename1 = "/Users/zzr/IdeaProjects/4047proj/blackListUrls.txt";
-			String filename2 = "/Users/zzr/IdeaProjects/4047proj/blackListWords.txt";
+			String filename1 = "/Users/lusi/Desktop/4047proj/blackListUrls.txt";
+			String filename2 = "/Users/lusi/Desktop//4047proj/blackListWords.txt";
 			File BlackUrl = new File(filename1);
 			File BlackWord = new File(filename2);
 			FileInputStream in1 = new FileInputStream(BlackUrl);
@@ -96,7 +96,7 @@ public class GreetingController {
 		}
 
         //If the processed url pool is not full or the URL Pool is not empty, the program continues
-		while(ProcessedPool.size() < X && !URLPool.empty()){
+		while(ProcessedPool.size() < Y && !URLPool.empty()){
 			load(URLPool.peek());
 		}
 
@@ -230,8 +230,13 @@ public class GreetingController {
 					}
 				}
 
-				model.addAttribute("WordResult",WordResult);
-				return "WordResult";
+				if(WordResult==null){
+					return "NoResult";
+				}else{
+					model.addAttribute("WordResult",WordResult);
+					return "WordResult";
+				}
+
 
 			//If user choose to do image search
 			case "image":
@@ -286,11 +291,18 @@ public class GreetingController {
 						ImageResult = andList;
 					}
 				}
-				for(image img:ImageResult){
-					img.src = img.url + "/" + img.src;
+
+
+				if(ImageResult==null){
+					return "NoResult";
+				}else{
+					for(image img:ImageResult){
+						img.src = img.url + "/" + img.src;
+					}
+					model.addAttribute("ImageResult",ImageResult);
+					return "ImageResult";
 				}
-				model.addAttribute("ImageResult",ImageResult);
-				return "ImageResult";
+
 			default:
 		}
 
@@ -303,27 +315,36 @@ public class GreetingController {
 	public List SearchWord(String keyword){
 
 		List<Word> result = new ArrayList<>();
+       try{
+		   Node n = (wordList.get(keyword)).head;
+		   result.add(n.word);
+		   while((wordList.get(keyword)).hasNext(n)){
+			   n = n.next;
+			   result.add(n.word);
+		   }
+		   return result;
+	   }catch(Exception e){
+		   return null;
+	   }
 
-		Node n = (wordList.get(keyword)).head;
-		result.add(n.word);
-		while((wordList.get(keyword)).hasNext(n)){
-			n = n.next;
-			result.add(n.word);
-		}
-		return result;
 	}
 
 	//Search for image objects with one word
 	public List SearchImage(String keyword){
 		List<image> result = new ArrayList<>();
 
-		imgNode n = (imgList.get(keyword)).head;
-		result.add(n.img);
-		while((imgList.get(keyword)).hasNext(n)){
-			n = n.next;
+		try{
+			imgNode n = (imgList.get(keyword)).head;
 			result.add(n.img);
+			while((imgList.get(keyword)).hasNext(n)){
+				n = n.next;
+				result.add(n.img);
+			}
+			return result;
+		}catch (Exception e){
+			return null;
 		}
-		return result;
+
 	}
 
 

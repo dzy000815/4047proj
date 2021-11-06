@@ -4,15 +4,41 @@
     <meta charset="UTF-8">
     <title>Title</title>
 </head>
+<style>
+ input[type=button] {
+  width: 40%;
+  background-color: #4CAF50;
+  color: white;
+  padding: 14px 20px;
+  margin: 8px 0;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+ input[type=button]:hover {
+  background-color: #45a049;
+}
+</style>
 <body>
-    <table>
-        <tr th:each="i:${WordResult}">
-            <td>
-                <a th:text="${i.title}" th:href="@{${i.url}}" ></a>
+    <h1 style="text-align:left">Search Result </h1>
+    <table STYLE="margin-top:50px;width:100%">
+        <tr style="height:40px">
+            <td STYLE="width:10%">No.</td>
+            <td STYLE="width:50%">Title</td>
+            <td STYLE="width:40%">URL</td>
+        </tr>
+        <tr th:each="i,index:${WordResult}" style="height:30px">
+            <td th:text="${index.count}" STYLE="width:10%"></td>
+            <td th:text="${i.title}" STYLE="width:50%"></td>
+            <td STYLE="width:40%">
+                <a th:text="${i.url}" th:href="@{${i.url}}" ></a>
             </td>
         </tr>
-        </div>
     </table>
+
+    <input type ="button" onclick="history.back()" value="Back to Search" style="margin-top:30px;width:200px">
+
 
 </body>
 </html>
