@@ -21,6 +21,8 @@ import javax.swing.text.html.parser.*;
 import javax.swing.text.*;
 
 import java.io.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 @Controller
@@ -33,7 +35,7 @@ public class GreetingController {
 	public Hashtable<String,LinkedList> wordList = new Hashtable<>();
 	public Hashtable<String,imgLinkedList> imgList = new Hashtable<>();
 	public String WebURL;
-	public String WebTitle;
+	public String WebTitle=" ";
 	public List<String> BlackListUrls = new ArrayList<>();
 	public List<String> BlackListWords = new ArrayList<>();
 	List<Word> WordResult = new ArrayList<>();
@@ -48,8 +50,8 @@ public class GreetingController {
 
 		//Read the blacklist files
 		try{
-			String filename1 = "/Users/lusi/Desktop/4047proj/blackListUrls.txt";
-			String filename2 = "/Users/lusi/Desktop/4047proj/blackListWords.txt";
+			String filename1 = "/Users/zzr/IdeaProjects/4047proj/blackListUrls.txt";
+			String filename2 = "/Users/zzr/IdeaProjects/4047proj/blackListWords.txt";
 			File BlackUrl = new File(filename1);
 			File BlackWord = new File(filename2);
 			FileInputStream in1 = new FileInputStream(BlackUrl);
@@ -228,8 +230,8 @@ public class GreetingController {
 					}
 				}
 
-				model.addAttribute("result",WordResult);
-				return "Result";
+				model.addAttribute("WordResult",WordResult);
+				return "WordResult";
 
 			//If user choose to do image search
 			case "image":
@@ -284,16 +286,14 @@ public class GreetingController {
 						ImageResult = andList;
 					}
 				}
-
 				for(image img:ImageResult){
-					ImageSrc.add(img.src);
-					ImageUrl.add(img.url);
+					img.src = img.url + "/" + img.src;
 				}
-				model.addAttribute("imgsrc",ImageSrc);
-				model.addAttribute("imgurl",ImageUrl);
+				model.addAttribute("ImageResult",ImageResult);
 				return "ImageResult";
 			default:
 		}
+
 
 
 		//model.addAttribute("result",WordResult);
@@ -328,12 +328,19 @@ public class GreetingController {
 
 
 	//The function to gather information of a website
-	public void load(String urlString){
+	public void load(String urlString) throws IOException {
 		URLPool.pop();//pop out the url being processed
 
 		WebURL = urlString;
 		byte[] buffer = new byte[1024];
 		String content = new String();
+		URL url1 = new URL(urlString);
+		InputStream in = url1.openStream();
+		int len;
+
+		while((len = in.read(buffer)) != -1)
+			content += new String(buffer);
+
 		List<String> uniqueContent = new ArrayList<>() ;//Store the keyword
 		List<String> urls = new ArrayList<>() ;//Store the urls
 		List<image> imgs = new ArrayList<>() ;//Store the images
@@ -342,12 +349,19 @@ public class GreetingController {
 		MyParserCallback callback = new MyParserCallback();
 		try {
 			//Get the unique keywords in the website being processed
-			uniqueContent = getUniqueWords(loadPlainText(urlString,parser,callback));
+			String pageContent=loadPlainText(urlString,parser,callback);
+			Pattern pa = Pattern.compile("<title>.*?</title>",Pattern.CANON_EQ);
+			Matcher ma = pa.matcher(content);
+			while (ma.find()) {
+				WebTitle = ma.group().substring(ma.group().indexOf('>')+1,ma.group().lastIndexOf('<'));
+			}
+			uniqueContent = getUniqueWords(pageContent);
 			//If the word is in blacklist or already in the list, the word cannot be added to the list
 			for(String word : uniqueContent){
 				if(BlackListWords.contains(word)){
 
 				}else if(!wordList.containsKey(word)){
+
 					wordList.put(word,new LinkedList(new Node(new Word(WebTitle,urlString))));
 				}else{
 					wordList.get(word).add(new Node(new Word(WebTitle,urlString)));
@@ -436,7 +450,7 @@ public class GreetingController {
 		@Override
 		public void handleStartTag(Tag tag, MutableAttributeSet attrSet, int pos)
 		{
-			if (tag.toString().equals("a")) {
+			 if (tag.toString().equals("a")) {
 
 				Enumeration e = attrSet.getAttributeNames();
 
@@ -491,17 +505,10 @@ public class GreetingController {
 					}
 				}
 
-
-				}else if(tag.toString().equals("title")){
-				Enumeration e = attrSet.getAttributeNames();
-
-				while(e.hasMoreElements()){
-					Object aname = e.nextElement();
-					WebTitle = (String) attrSet.getAttribute(aname);
 				}
 			}
-			}
 		}
+
 
 	//Get the text content in the website
 	String loadPlainText(String urlString, ParserDelegator parser,MyParserCallback callback) throws IOException {

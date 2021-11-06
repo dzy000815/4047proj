@@ -1,16 +1,20 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Result</title>
+
 </head>
 <body>
 <table>
-    <tr th:each="source:${imgsrc}" th:each="webpage:${imgurl}">
+    <tr th:each="j:${ImageResult}">
         <td>
-            <a th:href="@{${source}}" th:text="${webpage}"></a>
+            <img th:src="${j.src}">
+            <a th:href="@{${j.url}}" th:text="${j.url}"></a>
         </td>
     </tr>
+    </div>
 </table>
+
 </body>
 </html>

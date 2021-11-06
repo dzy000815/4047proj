@@ -1,8 +1,8 @@
 package com.example.servingwebcontent;
 
 public class Word {
-    String title;
-    String url;
+    public String title;
+    public String url;
 
     public Word(String title, String url){
         this.title = title;

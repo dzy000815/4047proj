@@ -6,11 +6,12 @@
 </head>
 <body>
     <table>
-        <tr th:each="i:${result}">
-            <td >
-                <a th:href="@{${i}}" th:text="${i}"></a>
+        <tr th:each="i:${WordResult}">
+            <td>
+                <a th:text="${i.title}" th:href="@{${i.url}}" ></a>
             </td>
         </tr>
+        </div>
     </table>
 
 </body>
