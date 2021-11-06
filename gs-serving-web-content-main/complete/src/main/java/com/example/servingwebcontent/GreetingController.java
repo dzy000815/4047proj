@@ -33,9 +33,10 @@ public class GreetingController {
 	public Hashtable<String,LinkedList> wordList = new Hashtable<>();
 	public Hashtable<String,imgLinkedList> imgList = new Hashtable<>();
 	public String WebURL;
+	public String WebTitle;
 	public List<String> BlackListUrls = new ArrayList<>();
 	public List<String> BlackListWords = new ArrayList<>();
-	List<String> WordResult = new ArrayList<>();
+	List<Word> WordResult = new ArrayList<>();
 	List<image> ImageResult = new ArrayList<>();
 
 	//Gathering information
@@ -112,11 +113,15 @@ public class GreetingController {
 				out.write(" ");
 				LinkedList linkedList = wordList.get(key);
 				Node n = linkedList.head;
-				out.write(n.value);
+				out.write(n.word.title);
+				out.write(" ");
+				out.write(n.word.url);
 				out.write(", ");
 				while(linkedList.hasNext(n)){
 					n = n.next;
-					out.write(n.value);
+					out.write(n.word.title);
+					out.write(" ");
+					out.write(n.word.url);
 					out.write(", ");
 				}
 				out.write("\n");
@@ -176,21 +181,21 @@ public class GreetingController {
 
 				//If there are multiple words, case by case discussion
 				for(int i=1; i < key.length; i++){
-					List<String> result = new ArrayList<>();
+					List<Word> result = new ArrayList<>();
 					//If there is "OR" in the input
 					if(key[i].equals("OR")){
-						List<String> removeList = new ArrayList<>();
+						List<Word> removeList = new ArrayList<>();
 						result = SearchWord(key[++i]);//Search with the word following "OR"
 						System.out.println(result);
 						//Get the union set of results from two words centered by "OR"
-						for(String word1:result){
-							for(String word2:WordResult){
-								if(word2.equals(word1)){
+						for(Word word1:result){
+							for(Word word2:WordResult){
+								if(word2.url.equals(word1.url)){
 									removeList.add(word1);
 								}
 							}
 						}
-						for(String wordRemove:removeList) {
+						for(Word wordRemove:removeList) {
 							result.remove(wordRemove);
 						}
 						//Add the new result to the list
@@ -200,19 +205,19 @@ public class GreetingController {
 					}else if(key[i].equals("-")){
 						result = SearchWord(key[++i]); //Search with the world following the "-"
 						//Delete the items in the list which equal to the new result
-						for(String word1:result){
+						for(Word word1:result){
 							WordResult.removeIf(word2 -> word2.equals(word1));
 						}
 
 					//If there is other content except for "OR" or "-" in the input
 					}else{
-						List<String> andList = new ArrayList<>();
+						List<Word> andList = new ArrayList<>();
 						result = SearchWord(key[i]);//Search with the word
 
 						//Get the intersection set between the list and the new result
-						for(String word1:result){
-							for(String word2:WordResult){
-								if(word2.equals(word1)){
+						for(Word word1:result){
+							for(Word word2:WordResult){
+								if(word2.url.equals(word1.url)){
 									andList.add(word1);
 								}
 							}
@@ -285,7 +290,7 @@ public class GreetingController {
 					ImageUrl.add(img.url);
 				}
 				model.addAttribute("imgsrc",ImageSrc);
-				model.addAttribute("imgurl",ImageUrl)
+				model.addAttribute("imgurl",ImageUrl);
 				return "ImageResult";
 			default:
 		}
@@ -297,13 +302,13 @@ public class GreetingController {
 	//Search for urls with one word
 	public List SearchWord(String keyword){
 
-		List<String> result = new ArrayList<>();
+		List<Word> result = new ArrayList<>();
 
 		Node n = (wordList.get(keyword)).head;
-		result.add(n.value);
+		result.add(n.word);
 		while((wordList.get(keyword)).hasNext(n)){
 			n = n.next;
-			result.add(n.value);
+			result.add(n.word);
 		}
 		return result;
 	}
@@ -335,7 +340,6 @@ public class GreetingController {
 
 		ParserDelegator parser = new ParserDelegator();
 		MyParserCallback callback = new MyParserCallback();
-
 		try {
 			//Get the unique keywords in the website being processed
 			uniqueContent = getUniqueWords(loadPlainText(urlString,parser,callback));
@@ -344,9 +348,9 @@ public class GreetingController {
 				if(BlackListWords.contains(word)){
 
 				}else if(!wordList.containsKey(word)){
-					wordList.put(word,new LinkedList(new Node()));
+					wordList.put(word,new LinkedList(new Node(new Word(WebTitle,urlString))));
 				}else{
-					wordList.get(word).add(new Node(urlString));
+					wordList.get(word).add(new Node(new Word(WebTitle,urlString)));
 				}
 			}
 
@@ -492,7 +496,8 @@ public class GreetingController {
 				Enumeration e = attrSet.getAttributeNames();
 
 				while(e.hasMoreElements()){
-
+					Object aname = e.nextElement();
+					WebTitle = (String) attrSet.getAttribute(aname);
 				}
 			}
 			}
