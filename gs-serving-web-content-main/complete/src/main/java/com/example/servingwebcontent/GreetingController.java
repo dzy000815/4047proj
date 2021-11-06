@@ -238,6 +238,7 @@ public class GreetingController {
 					return "NoResult";
 				}else{
 					model.addAttribute("WordResult",WordResult);
+					model.addAttribute("size",WordResult.size());
 					return "WordResult";
 				}
 
@@ -304,6 +305,7 @@ public class GreetingController {
 					//  	img.src = img.url + "/" + img.src;
 					//}
 					model.addAttribute("ImageResult",ImageResult);
+					model.addAttribute("size",ImageResult.size());
 					return "ImageResult";
 				}
 
