@@ -234,13 +234,11 @@ public class GreetingController {
 					}
 				}
 
-				if(WordResult==null){
-					return "NoResult";
-				}else{
-					model.addAttribute("WordResult",WordResult);
-					model.addAttribute("size",WordResult.size());
-					return "WordResult";
-				}
+
+				model.addAttribute("WordResult",WordResult);
+				model.addAttribute("size",WordResult.size());
+				return "WordResult";
+
 
 
 			//If user choose to do image search
@@ -298,16 +296,14 @@ public class GreetingController {
 				}
 
 
-				if(ImageResult==null){
-					return "NoResult";
-				}else{
+
 					//for(image img:ImageResult){
 					//  	img.src = img.url + "/" + img.src;
 					//}
 					model.addAttribute("ImageResult",ImageResult);
 					model.addAttribute("size",ImageResult.size());
 					return "ImageResult";
-				}
+
 
 			default:
 		}
@@ -319,7 +315,6 @@ public class GreetingController {
 	}
 	//Search for urls with one word
 	public List SearchWord(String keyword){
-
 		List<Word> result = new ArrayList<>();
        try{
 		   Node n = (wordList.get(keyword)).head;
@@ -330,7 +325,7 @@ public class GreetingController {
 		   }
 		   return result;
 	   }catch(Exception e){
-		   return null;
+		   return result;
 	   }
 
 	}
@@ -348,7 +343,7 @@ public class GreetingController {
 			}
 			return result;
 		}catch (Exception e){
-			return null;
+			return result;
 		}
 
 	}
@@ -427,7 +422,7 @@ public class GreetingController {
 			imgs = getimgs(urlString,parser,callback);
 			for(image i : imgs){
 
-				String file = i.src.substring(i.src.lastIndexOf('/')+1);
+				String file = i.src.substring(i.src.lastIndexOf('/')+1,i.src.lastIndexOf('.'));
 				//If the filename and alts of the image are not already in the list,
 				//the keywords of them will be added to the list separately
 				if(!imgList.contains(file)){
@@ -463,8 +458,6 @@ public class GreetingController {
 
 
 	class MyParserCallback extends HTMLEditorKit.ParserCallback {
-
-
 		public String content = new String();
 		public List<String> urls = new ArrayList<String>();
 		public List<image> imgs = new ArrayList<image>();
