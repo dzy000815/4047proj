@@ -29,7 +29,7 @@ import java.util.regex.Pattern;
 public class GreetingController {
 
 	int X = 5;
-	int Y = 3;
+	int Y = 5;
 	Stack<String> URLPool = new Stack<>();
 	List<String> ProcessedPool = new ArrayList<>();
 	public Hashtable<String,LinkedList> wordList = new Hashtable<>();
@@ -51,7 +51,7 @@ public class GreetingController {
 		//Read the blacklist files
 		try{
 			String filename1 = "/Users/lusi/Desktop/4047proj/blackListUrls.txt";
-			String filename2 = "/Users/lusi/Desktop//4047proj/blackListWords.txt";
+			String filename2 = "/Users/lusi/Desktop/4047proj/blackListWords.txt";
 			File BlackUrl = new File(filename1);
 			File BlackWord = new File(filename2);
 			FileInputStream in1 = new FileInputStream(BlackUrl);
@@ -216,17 +216,21 @@ public class GreetingController {
 						List<Word> andList = new ArrayList<>();
 						result = SearchWord(key[i]);//Search with the word
 
-						//Get the intersection set between the list and the new result
-						for(Word word1:result){
-							for(Word word2:WordResult){
-								if(word2.url.equals(word1.url)){
-									andList.add(word1);
+						try {
+							//Get the intersection set between the list and the new result
+							for (Word word1 : result) {
+								for (Word word2 : WordResult) {
+									if (word2.url.equals(word1.url)) {
+										andList.add(word1);
+									}
 								}
 							}
+							WordResult = andList;
+						}catch(Exception e){
+							return "NoResult";
 						}
-
 						//Replace the list with the new intersection set
-						WordResult = andList;
+
 					}
 				}
 
@@ -296,9 +300,9 @@ public class GreetingController {
 				if(ImageResult==null){
 					return "NoResult";
 				}else{
-					for(image img:ImageResult){
-						img.src = img.url + "/" + img.src;
-					}
+					//for(image img:ImageResult){
+					//  	img.src = img.url + "/" + img.src;
+					//}
 					model.addAttribute("ImageResult",ImageResult);
 					return "ImageResult";
 				}
@@ -432,6 +436,7 @@ public class GreetingController {
 				if(!i.alt.isEmpty()){
 					for(int j=0; j < i.alt.size(); j++){
 						if(!imgList.contains(i.alt.get(j))){
+							i.src = i.url + "/" +i.src;
 							imgList.put(i.alt.get(j),new imgLinkedList(new imgNode(i)));
 						}else{
 							(imgList.get(i)).add(new imgNode(i));
