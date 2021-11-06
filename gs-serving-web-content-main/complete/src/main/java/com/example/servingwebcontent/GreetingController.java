@@ -29,7 +29,7 @@ import java.util.regex.Pattern;
 public class GreetingController {
 
 	int X = 5;
-	int Y = 5;
+	int Y = 3;
 	Stack<String> URLPool = new Stack<>();
 	List<String> ProcessedPool = new ArrayList<>();
 	public Hashtable<String,LinkedList> wordList = new Hashtable<>();
@@ -50,8 +50,8 @@ public class GreetingController {
 
 		//Read the blacklist files
 		try{
-			String filename1 = "/Users/lusi/Desktop/4047proj/blackListUrls.txt";
-			String filename2 = "/Users/lusi/Desktop/4047proj/blackListWords.txt";
+			String filename1 = "/Users/zzr/IdeaProjects/4047proj/blackListUrls.txt";
+			String filename2 = "/Users/zzr/IdeaProjects/4047proj/blackListWords.txt";
 			File BlackUrl = new File(filename1);
 			File BlackWord = new File(filename2);
 			FileInputStream in1 = new FileInputStream(BlackUrl);
@@ -208,7 +208,7 @@ public class GreetingController {
 						result = SearchWord(key[++i]); //Search with the world following the "-"
 						//Delete the items in the list which equal to the new result
 						for(Word word1:result){
-							WordResult.removeIf(word2 -> word2.equals(word1));
+							WordResult.removeIf(word2 -> word2.url.equals(word1.url));
 						}
 
 					//If there is other content except for "OR" or "-" in the input
@@ -436,7 +436,6 @@ public class GreetingController {
 				if(!i.alt.isEmpty()){
 					for(int j=0; j < i.alt.size(); j++){
 						if(!imgList.contains(i.alt.get(j))){
-							i.src = i.url + "/" +i.src;
 							imgList.put(i.alt.get(j),new imgLinkedList(new imgNode(i)));
 						}else{
 							(imgList.get(i)).add(new imgNode(i));
