@@ -29,7 +29,15 @@ input[type=submit] {
 input[type=submit]:hover {
   background-color: #45a049;
 }
-
+input[type=number] {
+  width: 150px;
+  padding: 12px 20px;
+  margin: 8px 0;
+  display: inline-block;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
 div {
   border-radius: 5px;
   padding: 20px;
@@ -50,11 +58,19 @@ div {
 
 <body>
 <div class="box">
-    <h1 style="text-align:center">Invalid input! Please try again </h1>
+    <h1 style="text-align:center">Invalid URL! Please try again </h1>
 
     <form action="load" method="GET">
         <p>
             <input type="text" name="query" style="width: 100%; margin-left: auto" placeholder="Input URL here" required/>
+        </p>
+        <p>
+            URLPool Length: <input type="number" name="X" min="0" style="margin-left: auto" placeholder="number only" required/>
+        </p>
+        <p style="margin-left:-77px">
+            ProcessedURLPool Length: <input type="number" min="0" name="Y" style="margin-left: auto" placeholder="number only" required/>
+        </p>
+        <p>
             <input type="submit" value="Submit"/>
         </p>
     </form>

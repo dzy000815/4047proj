@@ -371,12 +371,6 @@ public class GreetingController {
 		byte[] buffer = new byte[1024];
 		String content = new String();
 		URL url1 = new URL(urlString);
-		InputStream in = url1.openStream();
-		int len;
-
-		while((len = in.read(buffer)) != -1)
-			content += new String(buffer);
-
 		List<String> uniqueContent = new ArrayList<>() ;//Store the keyword
 		List<String> urls = new ArrayList<>() ;//Store the urls
 		List<image> imgs = new ArrayList<>() ;//Store the images
@@ -384,6 +378,11 @@ public class GreetingController {
 		ParserDelegator parser = new ParserDelegator();
 		MyParserCallback callback = new MyParserCallback();
 		try {
+			InputStream in = url1.openStream();
+
+			while((in.read(buffer)) != -1)
+				content += new String(buffer);
+
 			//Get the unique keywords in the website being processed
 			String pageContent=loadPlainText(urlString,parser,callback);
 			Pattern pa = Pattern.compile("<title>.*?</title>",Pattern.CANON_EQ);
@@ -436,7 +435,7 @@ public class GreetingController {
 			imgs = getimgs(urlString,parser,callback);
 			for(image i : imgs){
 				String file = "";
-				if(i.src.contains(".")){
+				if(i.src.substring(i.src.lastIndexOf('/')+1).contains(".")){
 					file = i.src.substring(i.src.lastIndexOf('/')+1, i.src.lastIndexOf('.'));
 				}else{
 					file = i.src.substring(i.src.lastIndexOf('/')+1);
@@ -585,6 +584,7 @@ public class GreetingController {
 
 	//Get the urls involved in the website
 	List<String> getURLs(String srcPage, ParserDelegator parser,MyParserCallback callback) throws IOException {
+
 		URL url = new URL(srcPage);
 		InputStreamReader reader = new InputStreamReader(url.openStream());
 
@@ -594,9 +594,14 @@ public class GreetingController {
 
 		for (int i=0; i<callback.urls.size(); i++) {
 			String str = callback.urls.get(i);
-			if (!isAbsURL(str)){
-				callback.urls.set(i, toAbsURL(str, url).toString());
+			try{
+				if (!isAbsURL(str)){
+					callback.urls.set(i, toAbsURL(str, url).toString());
+				}
+			}catch (Exception e){
+
 			}
+
 
 		}
 
