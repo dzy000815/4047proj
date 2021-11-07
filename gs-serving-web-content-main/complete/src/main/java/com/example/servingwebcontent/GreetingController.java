@@ -370,7 +370,7 @@ public class GreetingController {
 		WebURL = urlString;
 		byte[] buffer = new byte[1024];
 		String content = new String();
-		URL url1 = new URL(urlString);
+
 		List<String> uniqueContent = new ArrayList<>() ;//Store the keyword
 		List<String> urls = new ArrayList<>() ;//Store the urls
 		List<image> imgs = new ArrayList<>() ;//Store the images
@@ -378,6 +378,7 @@ public class GreetingController {
 		ParserDelegator parser = new ParserDelegator();
 		MyParserCallback callback = new MyParserCallback();
 		try {
+			URL url1 = new URL(urlString);
 			InputStream in = url1.openStream();
 
 			while((in.read(buffer)) != -1)
