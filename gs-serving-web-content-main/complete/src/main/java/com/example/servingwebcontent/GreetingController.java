@@ -28,8 +28,6 @@ import java.util.regex.Pattern;
 @Controller
 public class GreetingController {
 
-	int X = 5;
-	int Y = 5;
 	Stack<String> URLPool = new Stack<>();
 	List<String> ProcessedPool = new ArrayList<>();
 	public Hashtable<String,LinkedList> wordList = new Hashtable<>();
@@ -51,8 +49,8 @@ public class GreetingController {
 							  Model model) throws ServletException, IOException{
 
 
-			X = inputX;
-			Y = inputY;
+		int X = inputX;
+		int Y = inputY;
 
 		//Read the blacklist files
 		try{
@@ -96,14 +94,14 @@ public class GreetingController {
 		try{
 			URL url_test = new URL(urlString);
 			URLPool.push(urlString); //If yes, push the url into the URLPool stack
-			load(urlString); //call the function to gather information of the web page
+			load(urlString, X,Y); //call the function to gather information of the web page
 		}catch (IOException e){
 			return "BlackSeed"; //If not, return to the error page to input the url again
 		}
 
         //If the processed url pool is not full or the URL Pool is not empty, the program continues
 		while(ProcessedPool.size() < Y && !URLPool.empty()){
-			load(URLPool.peek());
+			load(URLPool.peek(),X,Y);
 		}
 
 		//Output the scanning result to txt files
@@ -366,7 +364,7 @@ public class GreetingController {
 
 
 	//The function to gather information of a website
-	public void load(String urlString) throws IOException {
+	public void load(String urlString,int X,int Y) throws IOException {
 		URLPool.pop();//pop out the url being processed
 
 		WebURL = urlString;
