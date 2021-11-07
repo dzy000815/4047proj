@@ -29,7 +29,7 @@ import java.util.regex.Pattern;
 public class GreetingController {
 
 	int X = 5;
-	int Y = 10;
+	int Y = 5;
 	Stack<String> URLPool = new Stack<>();
 	List<String> ProcessedPool = new ArrayList<>();
 	public Hashtable<String,LinkedList> wordList = new Hashtable<>();
@@ -45,8 +45,14 @@ public class GreetingController {
 	List<String> ImageSrc = new ArrayList<>();
 	List<String> ImageUrl = new ArrayList<>();
 	@RequestMapping(value = "/load",method = RequestMethod.GET)
-	public String loadWebPage(@RequestParam(name = "query", required = false, defaultValue = "there")
-							   String urlString, Model model) throws ServletException, IOException{
+	public String loadWebPage(@RequestParam(name = "query", required = false, defaultValue = "there") String urlString,
+							  @RequestParam(name = "X", required = false, defaultValue = "there") int inputX,
+							  @RequestParam(name = "Y", required = false, defaultValue = "there") int inputY,
+							  Model model) throws ServletException, IOException{
+
+
+			X = inputX;
+			Y = inputY;
 
 		//Read the blacklist files
 		try{
