@@ -29,7 +29,7 @@ import java.util.regex.Pattern;
 public class GreetingController {
 
 	int X = 5;
-	int Y = 3;
+	int Y = 10;
 	Stack<String> URLPool = new Stack<>();
 	List<String> ProcessedPool = new ArrayList<>();
 	public Hashtable<String,LinkedList> wordList = new Hashtable<>();
@@ -50,8 +50,8 @@ public class GreetingController {
 
 		//Read the blacklist files
 		try{
-			String filename1 = "/Users/zzr/IdeaProjects/4047proj/blackListUrls.txt";
-			String filename2 = "/Users/zzr/IdeaProjects/4047proj/blackListWords.txt";
+			String filename1 = "/Users/lusi/Desktop/4047proj/blackListUrls.txt";
+			String filename2 = "/Users/lusi/Desktop/4047proj/blackListWords.txt";
 			File BlackUrl = new File(filename1);
 			File BlackWord = new File(filename2);
 			FileInputStream in1 = new FileInputStream(BlackUrl);
@@ -178,8 +178,13 @@ public class GreetingController {
 		switch (type){
 			//If user choose to do keyword search
 			case "word":
-				key = keyword.split(" ");
-				WordResult = SearchWord(key[0]); //Search with the first word in the input
+				try{
+					key = keyword.split(" ");
+					WordResult = SearchWord(key[0]); //Search with the first word in the input
+				}catch(Exception e){
+					return "SearchKey";
+				}
+
 
 				//If there are multiple words, case by case discussion
 				for(int i=1; i < key.length; i++){
@@ -243,8 +248,13 @@ public class GreetingController {
 
 			//If user choose to do image search
 			case "image":
-				key = keyword.split(" ");//Split the input by " "
-				ImageResult = SearchImage(key[0]);//Search with the first word in the input
+				try{
+					key = keyword.split(" ");//Split the input by " "
+					ImageResult = SearchImage(key[0]);//Search with the first word in the input
+				}catch (Exception e){
+					return "SearchKey";
+				}
+
 
 				//If there are multiple words, case by case discussion
 				for(int i=1; i < key.length; i++){
@@ -421,8 +431,13 @@ public class GreetingController {
 			//Get the images in the website being processed
 			imgs = getimgs(urlString,parser,callback);
 			for(image i : imgs){
+				String file = "";
+				if(i.src.contains(".")){
+					file = i.src.substring(i.src.lastIndexOf('/')+1, i.src.lastIndexOf('.'));
+				}else{
+					file = i.src.substring(i.src.lastIndexOf('/')+1);
+				}
 
-				String file = i.src.substring(i.src.lastIndexOf('/')+1,i.src.lastIndexOf('.'));
 				//If the filename and alts of the image are not already in the list,
 				//the keywords of them will be added to the list separately
 				if(!imgList.contains(file)){
